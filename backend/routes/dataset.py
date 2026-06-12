@@ -55,7 +55,7 @@ def upload_dataset(
     analysis = analyze_dataframe(df)
 
     dataset = Dataset(
-        user_id=1,
+        user_id=current_user.id,
         filename=file.filename,
         file_type=file_extension,
         rows=len(df),
