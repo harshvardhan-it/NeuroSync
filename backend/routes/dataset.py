@@ -122,21 +122,5 @@ def get_dataset(
         "filename": dataset.filename,
         "analysis": dataset.analysis_result
     }
-@router.get("/{dataset_id}")
-def get_dataset(
-    dataset_id: int,
-    session: Session = Depends(get_session)
-):
-
-    dataset = session.get(
-        Dataset,
-        dataset_id
-    )
-
-    if not dataset:
-        raise HTTPException(
-            status_code=404,
-            detail="Dataset not found"
-        )
 
     return dataset
