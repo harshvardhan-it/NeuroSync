@@ -46,5 +46,11 @@ export const uploadDataset = (file) => {
     }
   );
 };
+export const getExecutiveSummary = (
+  datasetId
+) =>
+  api.get(
+    `/dataset/${datasetId}/executive-summary`
+  );
 
 export default api;

@@ -11,10 +11,13 @@ useAuth,
 } from "./context/AuthContext";
 
 import AuthPage from "./components/auth/AuthPage";
+import WorkspacePage from "./pages/WorkspacePage";
 import DashboardPage from "./pages/DashboardPage";
 import InsightsPage from "./pages/InsightsPage";
 import AnomaliesPage from "./pages/AnomaliesPage";
 import ForecastsPage from "./pages/ForecastsPage";
+import RiskPage from "./pages/RiskPage";
+
 
 function FullPageLoader() {
 return (
@@ -89,6 +92,7 @@ export default function App() {
 return ( <AuthProvider> <BrowserRouter> <Routes>
 
 ```
+      
       <Route
         path="/auth"
         element={
@@ -96,6 +100,11 @@ return ( <AuthProvider> <BrowserRouter> <Routes>
             <AuthPage />
           </PublicRoute>
         }
+      />
+
+      <Route
+        path="/workspace"
+        element={<WorkspacePage />}
       />
 
       <Route
@@ -115,6 +124,11 @@ return ( <AuthProvider> <BrowserRouter> <Routes>
       <Route
         path="/forecasts"
         element={<ForecastsPage />}
+      />
+
+      <Route
+        path="/risk"
+        element={<RiskPage />}
       />
 
       <Route
