@@ -1,10 +1,15 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlmodel import Session
+
 from services.executive_summary_service import (
     ExecutiveSummaryService
 )
+
 from models.dataset import Dataset
+from models.user import User
+
 from utils.database import get_session
+from utils.auth import get_current_user
 
 from ai.analyzer import analyze_dataframe
 
@@ -25,6 +30,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.post("/upload")
 def upload_dataset(
     file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
 
@@ -63,6 +69,7 @@ def upload_dataset(
         status="uploaded",
         analysis_result=analysis
     )
+
     session.add(dataset)
     session.commit()
     session.refresh(dataset)
@@ -73,11 +80,11 @@ def upload_dataset(
         "analysis": analysis
     }
 
-@router.get(
-    "/{dataset_id}/executive-summary"
-)
+
+@router.get("/{dataset_id}/executive-summary")
 def get_executive_summary(
     dataset_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
 
@@ -92,10 +99,14 @@ def get_executive_summary(
             detail="Dataset not found"
         )
 
-    summary = (
-        ExecutiveSummaryService.generate(
-            dataset.analysis_result
+    if dataset.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
         )
+
+    summary = ExecutiveSummaryService.generate(
+        dataset.analysis_result
     )
 
     return summary
@@ -104,8 +115,10 @@ def get_executive_summary(
 @router.get("/{dataset_id}")
 def get_dataset(
     dataset_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
+
     dataset = session.get(
         Dataset,
         dataset_id
@@ -117,10 +130,14 @@ def get_dataset(
             detail="Dataset not found"
         )
 
+    if dataset.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
     return {
         "dataset_id": dataset.id,
         "filename": dataset.filename,
         "analysis": dataset.analysis_result
     }
-
-    return dataset
