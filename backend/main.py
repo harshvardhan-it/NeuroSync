@@ -2,11 +2,10 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes.auth import router as auth_router
-from routes.dataset import router as dataset_router
-
-from utils.database import create_db_and_tables
-from utils.logger import logger
+from backend.routes.auth import router as auth_router
+from backend.routes.dataset import router as dataset_router
+from backend.utils.database import create_db_and_tables
+from backend.utils.logger import logger
 
 app = FastAPI(
     title="NeuroSync API",
@@ -77,5 +76,6 @@ def root():
 
     return {
         "success": True,
-        "message": "NeuroSync API Running"
+        "message": "NeuroSync API Running",
+        "data": None
     }

@@ -50,8 +50,8 @@ from fastapi.security import OAuth2PasswordBearer
 
 from sqlmodel import Session, select
 
-from utils.database import get_session
-from models.user import User
+from backend.utils.database import get_session
+from backend.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/auth/login"

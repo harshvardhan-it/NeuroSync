@@ -1,20 +1,31 @@
-from pydantic_settings import BaseSettings
+import os
+from dotenv import load_dotenv
+
+load_dotenv("backend/.env")
 
 
-class Settings(BaseSettings):
+class Settings:
 
-    DATABASE_URL: str = "sqlite:///neurosync.db"
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///neurosync.db"
+    )
 
-    DEBUG: bool = False
+    DEBUG = os.getenv(
+        "DEBUG",
+        "False"
+    ).lower() == "true"
 
-    SECRET_KEY: str
+    SECRET_KEY = os.getenv("SECRET_KEY")
 
-    ALGORITHM: str
+    ALGORITHM = os.getenv("ALGORITHM")
 
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-
-    class Config:
-        env_file = ".env"
+    ACCESS_TOKEN_EXPIRE_MINUTES = int(
+        os.getenv(
+            "ACCESS_TOKEN_EXPIRE_MINUTES",
+            "60"
+        )
+    )
 
 
 settings = Settings()

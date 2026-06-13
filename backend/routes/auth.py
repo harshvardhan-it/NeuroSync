@@ -5,16 +5,10 @@ from jose import JWTError
 
 from sqlmodel import Session, select
 
-from models.user import User
-
-from schemas.auth_schema import (
-    RegisterSchema,
-    LoginSchema
-)
-
-from utils.database import get_session
-
-from utils.auth import (
+from backend.models.user import User
+from backend.schemas.auth_schema import RegisterSchema, LoginSchema
+from backend.utils.database import get_session
+from backend.utils.auth import (
     hash_password,
     verify_password,
     create_access_token,
@@ -64,8 +58,11 @@ def register(
     })
 
     return {
+        "success": True,
         "message": "User registered successfully",
-        "access_token": token
+        "data": {
+            "access_token": token
+        }
     }
 
 
@@ -99,7 +96,11 @@ def login(
     })
 
     return {
-        "access_token": token
+        "success": True,
+        "message": "Login successful",
+        "data": {
+            "access_token": token
+        }
     }
 
 
@@ -132,11 +133,15 @@ def get_current_user(
             )
 
         return {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email,
-            "focus_score": user.focus_score,
-            "streak": user.streak
+            "success": True,
+            "message": "User retrieved successfully",
+            "data": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "focus_score": user.focus_score,
+                "streak": user.streak
+            }
         }
 
     except JWTError:

@@ -1,18 +1,19 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlmodel import Session
 
-from services.executive_summary_service import (
+from backend.services.executive_summary_service import (
     ExecutiveSummaryService
 )
 
-from models.dataset import Dataset
-from models.user import User
+from backend.models.dataset import Dataset
+from backend.models.user import User
 
-from utils.database import get_session
-from utils.auth import get_current_user
-from utils.logger import logger
+from backend.utils.database import get_session
+from backend.utils.auth import get_current_user
+from backend.utils.logger import logger
 
-from ai.analyzer import analyze_dataframe
+from backend.ai.analyzer import analyze_dataframe
+from datetime import datetime
 
 import pandas as pd
 import os
@@ -30,6 +31,8 @@ os.makedirs(
     exist_ok=True
 )
 
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
 
 @router.post("/upload")
 def upload_dataset(
@@ -42,6 +45,10 @@ def upload_dataset(
         f"Dataset upload started by user {current_user.id}"
     )
 
+    # -----------------------------
+    # File Type Validation
+    # -----------------------------
+
     file_extension = file.filename.split(".")[-1].lower()
 
     if file_extension not in ["csv", "xlsx"]:
@@ -50,10 +57,40 @@ def upload_dataset(
             detail="Only CSV and XLSX files are supported"
         )
 
+    # -----------------------------
+    # File Size Validation
+    # -----------------------------
+
+    contents = file.file.read()
+
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File size exceeds 10MB limit"
+        )
+
+    file.file.seek(0)
+
+    # -----------------------------
+    # Unique Filename Generation
+    # -----------------------------
+
+    timestamp = datetime.utcnow().strftime(
+        "%Y%m%d_%H%M%S"
+    )
+
+    safe_filename = (
+        f"{timestamp}_{file.filename}"
+    )
+
     file_path = os.path.join(
         UPLOAD_DIR,
-        file.filename
+        safe_filename
     )
+
+    # -----------------------------
+    # Save File
+    # -----------------------------
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(
@@ -61,16 +98,71 @@ def upload_dataset(
             buffer
         )
 
-    if file_extension == "csv":
-        df = pd.read_csv(file_path)
-    else:
-        df = pd.read_excel(file_path)
+    # -----------------------------
+    # Read Dataset Safely
+    # -----------------------------
 
-    analysis = analyze_dataframe(df)
+    try:
+
+        if file_extension == "csv":
+            df = pd.read_csv(file_path)
+
+        else:
+            df = pd.read_excel(file_path)
+
+    except Exception:
+
+        logger.exception(
+            f"Failed to read file {file.filename}"
+        )
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or corrupted file"
+        )
+
+    # -----------------------------
+    # Dataset Validation
+    # -----------------------------
+
+    if df.empty:
+        raise HTTPException(
+            status_code=400,
+            detail="Dataset is empty"
+        )
+
+    if len(df.columns) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Dataset contains no columns"
+        )
+
+    # -----------------------------
+    # Analysis Protection
+    # -----------------------------
+
+    try:
+
+        analysis = analyze_dataframe(df)
+
+    except Exception:
+
+        logger.exception(
+            f"Analysis failed for file {file.filename}"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Dataset analysis failed"
+        )
+
+    # -----------------------------
+    # Store Dataset
+    # -----------------------------
 
     dataset = Dataset(
         user_id=current_user.id,
-        filename=file.filename,
+        filename=safe_filename,
         file_type=file_extension,
         rows=len(df),
         columns=len(df.columns),
@@ -87,9 +179,12 @@ def upload_dataset(
     )
 
     return {
+        "success": True,
         "message": "Dataset uploaded successfully",
-        "dataset_id": dataset.id,
-        "analysis": analysis
+        "data": {
+            "dataset_id": dataset.id,
+            "analysis": analysis
+        }
     }
 
 
@@ -125,8 +220,11 @@ def get_executive_summary(
         dataset.analysis_result
     )
 
-    return summary
-
+    return {
+        "success": True,
+        "message": "Executive summary generated",
+        "data": summary
+    }
 
 @router.get("/{dataset_id}")
 def get_dataset(
@@ -157,7 +255,11 @@ def get_dataset(
     )
 
     return {
-        "dataset_id": dataset.id,
-        "filename": dataset.filename,
-        "analysis": dataset.analysis_result
+        "success": True,
+        "message": "Dataset retrieved successfully",
+        "data": {
+            "dataset_id": dataset.id,
+            "filename": dataset.filename,
+            "analysis": dataset.analysis_result
+        }
     }
