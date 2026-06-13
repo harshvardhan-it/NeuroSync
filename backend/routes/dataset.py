@@ -10,6 +10,7 @@ from models.user import User
 
 from utils.database import get_session
 from utils.auth import get_current_user
+from utils.logger import logger
 
 from ai.analyzer import analyze_dataframe
 
@@ -24,7 +25,10 @@ router = APIRouter(
 
 UPLOAD_DIR = "uploads"
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(
+    UPLOAD_DIR,
+    exist_ok=True
+)
 
 
 @router.post("/upload")
@@ -33,6 +37,10 @@ def upload_dataset(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
+
+    logger.info(
+        f"Dataset upload started by user {current_user.id}"
+    )
 
     file_extension = file.filename.split(".")[-1].lower()
 
@@ -74,6 +82,10 @@ def upload_dataset(
     session.commit()
     session.refresh(dataset)
 
+    logger.info(
+        f"Dataset {dataset.id} uploaded successfully"
+    )
+
     return {
         "message": "Dataset uploaded successfully",
         "dataset_id": dataset.id,
@@ -105,6 +117,10 @@ def get_executive_summary(
             detail="Access denied"
         )
 
+    logger.info(
+        f"Executive summary requested for dataset {dataset_id}"
+    )
+
     summary = ExecutiveSummaryService.generate(
         dataset.analysis_result
     )
@@ -135,6 +151,10 @@ def get_dataset(
             status_code=403,
             detail="Access denied"
         )
+
+    logger.info(
+        f"Dataset {dataset_id} accessed by user {current_user.id}"
+    )
 
     return {
         "dataset_id": dataset.id,
