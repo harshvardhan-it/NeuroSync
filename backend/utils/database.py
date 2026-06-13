@@ -1,10 +1,10 @@
 from sqlmodel import SQLModel, create_engine, Session
 
-DATABASE_URL = "sqlite:///neurosync.db"
+from config.settings import settings
 
 engine = create_engine(
-    DATABASE_URL,
-    echo=True
+    settings.DATABASE_URL,
+    echo=settings.DEBUG
 )
 
 
