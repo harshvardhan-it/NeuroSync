@@ -1,8 +1,19 @@
+import { useState } from "react";
+
 import WorkspaceHero from "../components/workspace/WorkspaceHero";
-import PromptSuggestions from "../components/workspace/PromptSuggestions";
 import WorkspaceScene from "../components/workspace/WorkspaceScene";
+import AICopilot from "../components/workspace/AICopilot";
 
 export default function WorkspacePage() {
+  const [datasetMeta, setDatasetMeta] =
+    useState(
+      JSON.parse(
+        localStorage.getItem(
+          "dataset_meta"
+        ) || "{}"
+      )
+    );
+
   return (
     <main
       className="
@@ -16,9 +27,19 @@ export default function WorkspacePage() {
     >
       <WorkspaceScene />
 
-      <WorkspaceHero />
+      <WorkspaceHero
+        setDatasetMeta={
+          setDatasetMeta
+        }
+      />
 
-      <PromptSuggestions />
+      <div className="mt-8">
+        <AICopilot
+          datasetMeta={
+            datasetMeta
+          }
+        />
+      </div>
     </main>
   );
 }

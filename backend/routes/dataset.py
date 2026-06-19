@@ -183,6 +183,10 @@ def upload_dataset(
         "message": "Dataset uploaded successfully",
         "data": {
             "dataset_id": dataset.id,
+            "filename": file.filename,
+            "rows": dataset.rows,
+            "columns": dataset.columns,
+            "uploaded_at": datetime.utcnow().isoformat(),
             "analysis": analysis
         }
     }
@@ -262,4 +266,30 @@ def get_dataset(
             "filename": dataset.filename,
             "analysis": dataset.analysis_result
         }
+    }
+
+@router.get("/")
+def get_user_datasets(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    datasets = session.query(Dataset).filter(
+        Dataset.user_id == current_user.id
+    ).order_by(
+        Dataset.id.desc()
+    ).all()
+
+    return {
+        "success": True,
+        "message": "Datasets fetched successfully",
+        "data": [
+            {
+                "id": d.id,
+                "filename": d.filename,
+                "rows": d.rows,
+                "columns": d.columns,
+                "status": d.status,
+            }
+            for d in datasets
+        ]
     }

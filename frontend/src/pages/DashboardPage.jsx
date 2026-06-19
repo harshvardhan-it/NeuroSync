@@ -1,197 +1,195 @@
 import { useEffect, useState } from "react";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
+import DatasetMetaCard from "../components/dashboard/DatasetMetaCard";
+import DashboardScene from "../components/dashboard/DashboardScene";
+import ExecutiveHero from "../components/dashboard/ExecutiveHero";
+import DecisionEngine from "../components/dashboard/DecisionEngine";
+import ExecutiveSummary from "../components/dashboard/ExecutiveSummary";
+import IntelligenceGrid from "../components/dashboard/IntelligenceGrid";
+import ThinkingTimeline from "../components/dashboard/ThinkingTimeline";
+import ActionPlan from "../components/dashboard/ActionPlan";
 
-import {
-  getExecutiveSummary,
-} from "../api/client";
+import { getExecutiveSummary } from "../api/client";
 
 export default function DashboardPage() {
-
   const [summary, setSummary] =
     useState(null);
 
   const [loading, setLoading] =
     useState(true);
 
+  // Dynamic dataset metadata
+  const dataset = JSON.parse(
+    localStorage.getItem(
+      "dataset_meta"
+    ) || "null"
+  );
+
   useEffect(() => {
+    const loadSummary =
+      async () => {
+        try {
+          const datasetId =
+            Number(
+              localStorage.getItem(
+                "dataset_id"
+              )
+            );
 
-    const loadSummary = async () => {
+          if (!datasetId) {
+            setLoading(false);
+            return;
+          }
 
-      try {
+          const response =
+            await getExecutiveSummary(
+              datasetId
+            );
 
-        const response =
-          await getExecutiveSummary(1);
-
-        setSummary(
-          response.data
-        );
-
-      } catch (error) {
-
-        console.error(error);
-
-      } finally {
-
-        setLoading(false);
-
-      }
-    };
+          setSummary(
+            response.data.data
+          );
+        } catch (error) {
+          console.error(
+            "Dashboard Error:",
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
 
     loadSummary();
-
   }, []);
 
   if (loading) {
-
     return (
       <DashboardLayout>
-        <div>
-          Loading Executive Dashboard...
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (!summary) {
-
-    return (
-      <DashboardLayout>
-        <div>
-          Executive summary unavailable
+        <div
+          className="
+            min-h-[80vh]
+            flex
+            items-center
+            justify-center
+          "
+        >
+          <div
+            className="
+              text-xl
+              animate-pulse
+            "
+          >
+            Loading Executive Intelligence...
+          </div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-
     <DashboardLayout>
+      <div
+        className="
+          relative
+          min-h-screen
+          overflow-hidden
+        "
+      >
+        <DashboardScene />
 
-      <div className="space-y-8">
+        <div
+          className="
+            relative
+            z-10
+            space-y-8
+            p-6
+            lg:p-8
+          "
+        >
+          {/* Header */}
+          <div>
+            <p
+              className="
+                uppercase
+                tracking-[0.3em]
+                text-xs
+              "
+              style={{
+                color:
+                  "var(--gold-primary)",
+              }}
+            >
+              EXECUTIVE COMMAND CENTER
+            </p>
 
-        <div>
+            <h1
+              className="
+                mt-3
+                text-4xl
+                md:text-6xl
+                font-display
+                font-bold
+              "
+            >
+              AI Executive
+              Intelligence
+            </h1>
 
-          <h1 className="text-4xl font-bold">
-            Executive Command Center
-          </h1>
+            <p
+              className="
+                mt-4
+                max-w-3xl
+                text-lg
+              "
+              style={{
+                color:
+                  "var(--text-secondary)",
+              }}
+            >
+              Transform data into
+              decisions with
+              AI-powered business
+              intelligence.
+            </p>
+          </div>
 
-          <p className="opacity-70 mt-2">
-            AI Executive Intelligence Overview
-          </p>
+          {/* KPI Hero */}
+          <ExecutiveHero
+            summary={summary}
+          />
 
+          {/* Dynamic Dataset Card */}
+          <DatasetMetaCard
+            dataset={dataset}
+          />
+
+          {/* Decision Engine */}
+          <DecisionEngine
+            summary={summary}
+          />
+
+          {/* Summary */}
+          <ExecutiveSummary
+            summary={summary}
+          />
+
+          {/* Intelligence Grid */}
+          <IntelligenceGrid
+            summary={summary}
+          />
+
+          {/* Timeline */}
+          <ThinkingTimeline
+            summary={summary}
+          />
+
+          {/* Action Plan */}
+          <ActionPlan
+            summary={summary}
+          />
         </div>
-
-        <div className="grid grid-cols-4 gap-6">
-
-          <div className="glass-card p-6">
-
-            <h3>
-              Health Score
-            </h3>
-
-            <div className="text-4xl mt-4 font-bold">
-              {summary.health_score}
-            </div>
-
-          </div>
-
-          <div className="glass-card p-6">
-
-            <h3>
-              Business Status
-            </h3>
-
-            <div className="text-4xl mt-4 font-bold">
-              {summary.business_status}
-            </div>
-
-          </div>
-
-          <div className="glass-card p-6">
-
-            <h3>
-              Risk Level
-            </h3>
-
-            <div className="text-4xl mt-4 font-bold">
-              {summary.risk_level}
-            </div>
-
-          </div>
-
-          <div className="glass-card p-6">
-
-            <h3>
-              Top Decision
-            </h3>
-
-            <div className="mt-4 font-semibold">
-              {summary.top_decision}
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className="glass-card p-6">
-
-          <h2 className="text-2xl font-bold mb-4">
-            Strategic Summary
-          </h2>
-
-          <p>
-            {summary.strategic_summary}
-          </p>
-
-        </div>
-
-        <div className="glass-card p-6">
-
-          <h2 className="text-2xl font-bold mb-4">
-            Executive Action Plan
-          </h2>
-
-          <div className="space-y-4">
-
-            {summary.action_plan.map(
-              (item) => (
-
-                <div
-                  key={item.priority}
-                  className="border-b pb-3"
-                >
-
-                  <div className="font-semibold">
-
-                    #{item.priority}
-
-                    {" "}
-
-                    {item.action}
-
-                  </div>
-
-                  <div className="text-sm opacity-70">
-
-                    Timeline:
-
-                    {" "}
-
-                    {item.timeline}
-
-                  </div>
-
-                </div>
-              )
-            )}
-
-          </div>
-
-        </div>
-
       </div>
-
     </DashboardLayout>
   );
 }

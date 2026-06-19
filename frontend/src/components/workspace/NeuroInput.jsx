@@ -8,66 +8,118 @@ import {
 export default function NeuroInput({
   setAnalysis,
   setLoading,
+  setDatasetMeta,
 }) {
-  const [value, setValue] = 
+  const [value, setValue] =
     useState("");
+
   const [file, setFile] =
     useState(null);
-  const handleUpload = async () => {
 
-    console.log("BUTTON CLICKED");
+  const handleUpload = async () => {
+    console.log(
+      "BUTTON CLICKED"
+    );
 
     if (!file) {
-      console.log("NO FILE");
+      console.log(
+        "NO FILE"
+      );
       return;
     }
 
-    console.log("FILE FOUND", file);
+    console.log(
+      "FILE FOUND",
+      file
+    );
 
     try {
-
       setLoading(true);
 
       const response =
-        await uploadDataset(file);
+        await uploadDataset(
+          file
+        );
 
       console.log(
         "UPLOAD RESPONSE",
         response
       );
 
+      const datasetId =
+        response.data.data
+          .dataset_id;
+
+      localStorage.setItem(
+        "dataset_id",
+        datasetId
+      );
+
+      const meta = {
+        name:
+          response.data.data
+            .filename ||
+          file.name,
+
+        rows:
+          response.data.data
+            .rows || 0,
+
+        columns:
+          response.data.data
+            .columns || 0,
+
+        uploaded:
+          "Just now",
+      };
+
+      localStorage.setItem(
+        "dataset_meta",
+        JSON.stringify(meta)
+      );
+
+      /* IMPORTANT */
+      setDatasetMeta(meta);
+
       console.log(
-        "ANALYSIS",
-        response.data.analysis
+        "DATASET ID:",
+        datasetId
+      );
+
+      console.log(
+        "DATASET META:",
+        JSON.parse(
+          localStorage.getItem(
+            "dataset_meta"
+          )
+        )
+      );
+
+      console.log(
+        "ANALYSIS:",
+        response.data.data
+          .analysis
       );
 
       setAnalysis(
-        response.data.analysis
+        response.data.data
+          .analysis
       );
 
     } catch (error) {
-
       console.error(
         "UPLOAD FAILED",
         error
       );
-
     } finally {
-
       setLoading(false);
-
     }
-
-  }; 
-
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto">
-
       <div className="relative">
-
         {/* Luxury Background Glow */}
-
         <div
           className="
             absolute
@@ -83,9 +135,7 @@ export default function NeuroInput({
         />
 
         {/* Gemini Style Border */}
-
         <div className="gemini-ring">
-
           <div className="gemini-light" />
 
           <div
@@ -99,10 +149,9 @@ export default function NeuroInput({
                 "rgba(0,0,0,0.45)",
             }}
           />
-
         </div>
-        {/* Main Input */}
 
+        {/* Main Input */}
         <div
           className="
             relative
@@ -114,24 +163,29 @@ export default function NeuroInput({
             py-5
           "
           style={{
-            background: "#0C0C0C",
+            background:
+              "#0C0C0C",
+
             borderColor:
               "rgba(255,255,255,0.06)",
           }}
         >
           <input
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx"
             className="hidden"
             id="dataset-upload"
-            onChange={(e) =>
+            onChange={(
+              e
+            ) =>
               setFile(
-                e.target.files?.[0]
+                e.target
+                  .files?.[0]
               )
             }
           />
-          <div className="flex items-center gap-4">
 
+          <div className="flex items-center gap-4">
             <Sparkles
               size={22}
               color="#E7B75F"
@@ -145,7 +199,7 @@ export default function NeuroInput({
                   : ""
               }
               readOnly
-              placeholder="Upload a CSV dataset..."
+              placeholder="Upload a dataset..."
               onClick={() =>
                 document
                   .getElementById(
@@ -165,7 +219,9 @@ export default function NeuroInput({
             />
 
             <button
-              onClick={handleUpload}
+              onClick={
+                handleUpload
+              }
               className="
                 w-12
                 h-12
@@ -187,13 +243,9 @@ export default function NeuroInput({
                 color="white"
               />
             </button>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }

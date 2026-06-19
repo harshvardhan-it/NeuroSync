@@ -1,298 +1,515 @@
+
+
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import AuthScene from "./AuthScene";
 
 export default function AuthPage() {
-const [mode, setMode] = useState("login");
+  const { login, register } = useAuth();
 
-const [name, setName] = useState("");
-const [email, setEmail] = useState("");
-const [password, setPassword] = useState("");
+  const [mode, setMode] = useState("login");
 
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-const { login, register } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-const handleSubmit = async () => {
-setLoading(true);
-setError("");
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError("");
 
-```
-try {
-  if (mode === "login") {
-    await login(email, password);
-  } else {
-    await register(name, email, password);
-  }
-} catch (err) {
-  setError(
-    err?.response?.data?.detail ||
-      "Something went wrong"
-  );
-} finally {
-  setLoading(false);
-}
-```
+    try {
+      if (mode === "login") {
+        await login(email, password);
+      } else {
+        await register(
+          name,
+          email,
+          password
+        );
+      }
+    } catch (err) {
+      setError(
+        err?.response?.data?.detail ||
+        "Something went wrong"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-};
-
-return ( <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[var(--bg-base)]">
-{/* Background Glows */}
-<div
-className="absolute inset-0"
-style={{
-background: `             radial-gradient(
-              ellipse 55% 45% at 28% 38%,
-              rgba(34,211,238,0.18),
-              transparent
-            ),
-            radial-gradient(
-              ellipse 45% 50% at 74% 66%,
-              rgba(167,139,250,0.10),
-              transparent
-            )
-          `,
-}}
-/>
-<div
-  className="absolute w-[600px] h-[600px] rounded-full blur-[120px]"
-  style={{
-    background:
-      "rgba(34,211,238,0.08)",
-  }}
-/>
-```
-  {/* Auth Card */}
-  <div
-    className="relative z-10 animate-fadeUp w-[400px] rounded-2xl p-8"
-    style={{
-      background: "rgba(255,255,255,0.028)",
-      border: "1px solid rgba(255,255,255,0.07)",
-      backdropFilter: "blur(24px)",
-    }}
-  >
-    {/* Logo */}
-    <div className="flex flex-col items-center mb-8">
-      <div
-        className="w-[34px] h-[34px] rounded-[9px] flex items-center justify-center mb-4 text-black font-bold"
-        style={{
-          background:
-            "linear-gradient(135deg,#22d3ee,#a78bfa)",
-        }}
-      >
-        ⬡
-      </div>
-
-      <h1 className="font-display font-extrabold text-[21px] text-[var(--text-primary)]">
-        NeuroSync{" "}
-        <span style={{ color: "var(--cyan)" }}>
-          AI
-        </span>
-      </h1>
-
-      <p
-        className="mt-2 text-center text-[12px]"
-        style={{
-          color: "var(--text-secondary)",
-        }}
-      >
-        Productivity analytics,
-        powered by AI
-      </p>
-    </div>
-
-    {/* Tabs */}
+  return (
     <div
-      className="flex p-1 rounded-lg mb-6"
-      style={{
-        background:
-          "rgba(255,255,255,0.04)",
-      }}
+      className="
+        relative
+        min-h-screen
+        overflow-hidden
+        bg-[var(--bg-base)]
+        flex
+        items-center
+        justify-center
+        px-6
+      "
     >
-      <button
-        onClick={() => setMode("login")}
-        className="flex-1 py-2 rounded-md text-sm transition-all"
-        style={{
-          background:
-            mode === "login"
-              ? "rgba(255,255,255,0.08)"
-              : "transparent",
-          color:
-            mode === "login"
-              ? "var(--text-primary)"
-              : "var(--text-secondary)",
-        }}
-      >
-        Sign In
-      </button>
+      <AuthScene />
 
-      <button
-        onClick={() => setMode("register")}
-        className="flex-1 py-2 rounded-md text-sm transition-all"
-        style={{
-          background:
-            mode === "register"
-              ? "rgba(255,255,255,0.08)"
-              : "transparent",
-          color:
-            mode === "register"
-              ? "var(--text-primary)"
-              : "var(--text-secondary)",
-        }}
+      <div
+        className="
+          relative
+          z-10
+          w-full
+          max-w-7xl
+          grid
+          lg:grid-cols-2
+          gap-16
+          items-center
+        "
       >
-        Create Account
-      </button>
-    </div>
-
-    {/* Register Name */}
-    {mode === "register" && (
-      <div className="mb-4">
-        <label
-          className="block mb-2 text-[11px] font-medium"
-          style={{
-            color:
-              "var(--text-secondary)",
-          }}
+        {/* Left Hero */}
+        <div
+          className="
+            hidden
+            lg:block
+            animate-fadeUp
+          "
         >
-          Full Name
-        </label>
+          <div
+            className="
+              analysis-label
+              mb-6
+            "
+            style={{
+              color:
+                "var(--gold-primary)",
+            }}
+          >
+            NEUROSYNC AI
+          </div>
 
-        <input
-          type="text"
-          value={name}
-          onChange={(e) =>
-            setName(e.target.value)
-          }
-          placeholder="Enter your name"
-          className="w-full px-4 py-3 rounded-lg text-sm outline-none"
-          style={{
-            background:
-              "rgba(255,255,255,0.05)",
-            border:
-              "1px solid rgba(255,255,255,0.07)",
-            color:
-              "var(--text-primary)",
-          }}
-        />
+          <h1
+            className="
+              hero-title
+              text-7xl
+              xl:text-8xl
+            "
+          >
+            <span className="glow-text">
+              Think.
+            </span>
+
+            <br />
+
+            Analyze.
+
+            <br />
+
+            Decide.
+          </h1>
+
+          <p
+            className="
+              mt-8
+              max-w-xl
+              text-lg
+              leading-8
+            "
+            style={{
+              color:
+                "var(--text-secondary)",
+            }}
+          >
+            Executive intelligence
+            powered by AI.
+            Transform raw data into
+            strategic decisions.
+          </p>
+
+          <div
+            className="
+              mt-12
+              flex
+              gap-8
+            "
+          >
+            <Metric
+              value="AI"
+              label="Decision Engine"
+            />
+
+            <Metric
+              value="24/7"
+              label="Analysis"
+            />
+
+            <Metric
+              value="∞"
+              label="Insights"
+            />
+          </div>
+        </div>
+
+        {/* Auth Card */}
+        <div
+          className="
+            animate-fadeUp
+            w-full
+            max-w-md
+            mx-auto
+          "
+        >
+          <div
+            className="
+              relative
+              overflow-hidden
+              rounded-[32px]
+              p-8
+            "
+            style={{
+              background:
+                "rgba(255,255,255,0.03)",
+
+              border:
+                "1px solid rgba(255,255,255,0.08)",
+
+              backdropFilter:
+                "blur(24px)",
+
+              boxShadow:
+                "0 25px 80px rgba(0,0,0,0.35)",
+            }}
+          >
+            {/* Logo */}
+            <div
+              className="
+                flex
+                flex-col
+                items-center
+                mb-8
+              "
+            >
+              <div
+                className="
+                  w-14
+                  h-14
+                  rounded-2xl
+                  flex
+                  items-center
+                  justify-center
+                  font-bold
+                  text-black
+                  text-xl
+                  mb-5
+                "
+                style={{
+                  background:
+                    "linear-gradient(135deg,#E7B75F,#B3264A)",
+                }}
+              >
+                ⬡
+              </div>
+
+              <h2
+                className="
+                  font-display
+                  text-3xl
+                  font-bold
+                "
+              >
+                NeuroSync AI
+              </h2>
+
+              <p
+                className="
+                  mt-2
+                  text-sm
+                "
+                style={{
+                  color:
+                    "var(--text-secondary)",
+                }}
+              >
+                Executive Intelligence Platform
+              </p>
+            </div>
+
+            {/* Tabs */}
+            <div
+              className="
+                flex
+                rounded-2xl
+                p-1
+                mb-8
+              "
+              style={{
+                background:
+                  "rgba(255,255,255,0.04)",
+              }}
+            >
+              <button
+                onClick={() =>
+                  setMode("login")
+                }
+                className="
+                  flex-1
+                  py-3
+                  rounded-xl
+                  transition-all
+                  font-medium
+                "
+                style={{
+                  background:
+                    mode === "login"
+                      ? "linear-gradient(135deg,#E7B75F,#B3264A)"
+                      : "transparent",
+
+                  color:
+                    mode === "login"
+                      ? "#000"
+                      : "var(--text-secondary)",
+                }}
+              >
+                Sign In
+              </button>
+
+              <button
+                onClick={() =>
+                  setMode(
+                    "register"
+                  )
+                }
+                className="
+                  flex-1
+                  py-3
+                  rounded-xl
+                  transition-all
+                  font-medium
+                "
+                style={{
+                  background:
+                    mode ===
+                    "register"
+                      ? "linear-gradient(135deg,#E7B75F,#B3264A)"
+                      : "transparent",
+
+                  color:
+                    mode ===
+                    "register"
+                      ? "#000"
+                      : "var(--text-secondary)",
+                }}
+              >
+                Register
+              </button>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div
+                className="
+                  mb-4
+                  p-4
+                  rounded-xl
+                  text-sm
+                "
+                style={{
+                  background:
+                    "rgba(179,38,74,0.15)",
+
+                  border:
+                    "1px solid rgba(179,38,74,0.3)",
+
+                  color:
+                    "#ffb4c4",
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            {/* Register Name */}
+            {mode ===
+              "register" && (
+              <InputField
+                label="Full Name"
+                value={name}
+                setValue={setName}
+                placeholder="John Doe"
+                type="text"
+              />
+            )}
+
+            <InputField
+              label="Email"
+              value={email}
+              setValue={setEmail}
+              placeholder="you@example.com"
+              type="email"
+            />
+
+            <InputField
+              label="Password"
+              value={password}
+              setValue={setPassword}
+              placeholder="••••••••"
+              type="password"
+            />
+
+            <button
+              onClick={
+                handleSubmit
+              }
+              disabled={
+                loading
+              }
+              className="
+                w-full
+                py-4
+                rounded-2xl
+                font-bold
+                transition-all
+                mt-4
+              "
+              style={{
+                background:
+                  "linear-gradient(135deg,#E7B75F,#B3264A)",
+
+                color:
+                  "#000",
+
+                opacity:
+                  loading
+                    ? 0.7
+                    : 1,
+
+                cursor:
+                  loading
+                    ? "not-allowed"
+                    : "pointer",
+              }}
+            >
+              {loading
+                ? "Processing..."
+                : "Enter Dashboard →"}
+            </button>
+
+            <p
+              className="
+                text-center
+                mt-8
+                text-xs
+              "
+              style={{
+                color:
+                  "var(--text-secondary)",
+              }}
+            >
+              Portfolio ·
+              {" "}
+              <span
+                style={{
+                  color:
+                    "var(--gold-primary)",
+                }}
+              >
+                Harshvardhan
+              </span>
+              {" "}
+              · v2.0
+            </p>
+          </div>
+        </div>
       </div>
-    )}
-
-    {/* Email */}
-    <div className="mb-4">
-      <label
-        className="block mb-2 text-[11px] font-medium"
-        style={{
-          color:
-            "var(--text-secondary)",
-        }}
-      >
-        Email Address
-      </label>
-
-      <input
-        type="email"
-        value={email}
-        onChange={(e) =>
-          setEmail(e.target.value)
-        }
-        placeholder="Enter your email"
-        className="w-full px-4 py-3 rounded-lg text-sm outline-none"
-        style={{
-          background:
-            "rgba(255,255,255,0.05)",
-          border:
-            "1px solid rgba(255,255,255,0.07)",
-          color:
-            "var(--text-primary)",
-        }}
-      />
     </div>
+  );
+}
 
-    {/* Password */}
+function InputField({
+  label,
+  value,
+  setValue,
+  placeholder,
+  type,
+}) {
+  return (
     <div className="mb-5">
       <label
-        className="block mb-2 text-[11px] font-medium"
+        className="
+          block
+          mb-2
+          text-sm
+        "
         style={{
           color:
             "var(--text-secondary)",
         }}
       >
-        Password
+        {label}
       </label>
 
       <input
-        type="password"
-        value={password}
+        type={type}
+        value={value}
         onChange={(e) =>
-          setPassword(e.target.value)
+          setValue(
+            e.target.value
+          )
         }
-        placeholder="Enter your password"
-        className="w-full px-4 py-3 rounded-lg text-sm outline-none"
+        placeholder={
+          placeholder
+        }
+        className="
+          w-full
+          px-5
+          py-4
+          rounded-2xl
+          outline-none
+          transition-all
+        "
         style={{
           background:
-            "rgba(255,255,255,0.05)",
+            "rgba(255,255,255,0.04)",
+
           border:
-            "1px solid rgba(255,255,255,0.07)",
+            "1px solid rgba(255,255,255,0.08)",
+
           color:
             "var(--text-primary)",
         }}
       />
     </div>
+  );
+}
 
-    {/* Error */}
-    {error && (
+function Metric({
+  value,
+  label,
+}) {
+  return (
+    <div>
       <div
-        className="mb-4 text-sm"
+        className="
+          text-3xl
+          font-bold
+          glow-text
+        "
+      >
+        {value}
+      </div>
+
+      <div
+        className="
+          mt-2
+          text-sm
+        "
         style={{
           color:
-            "var(--danger)",
+            "var(--text-secondary)",
         }}
       >
-        {error}
+        {label}
       </div>
-    )}
-
-    {/* CTA */}
-    <button
-      onClick={handleSubmit}
-      disabled={loading}
-      className="w-full py-3 rounded-lg font-display font-bold text-sm transition-all"
-      style={{
-        background:
-          "linear-gradient(135deg,#22d3eedd,#a78bfadd)",
-        color: "#ffffff",
-        opacity: loading ? 0.7 : 1,
-        cursor:
-          loading
-            ? "not-allowed"
-            : "pointer",
-      }}
-    >
-      {loading
-        ? "Loading..."
-        : "Enter Dashboard →"}
-    </button>
-
-    {/* Footer */}
-    <p
-      className="text-center mt-6 text-[11px]"
-      style={{
-        color: "var(--text-muted)",
-      }}
-    >
-      Portfolio ·{" "}
-      <span
-        style={{
-          color: "var(--cyan)",
-        }}
-      >
-        Harshvardhan
-      </span>{" "}
-      · v1.0
-    </p>
-  </div>
-</div>
-
-
-);
+    </div>
+  );
 }

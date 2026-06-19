@@ -1,12 +1,17 @@
 import { useState } from "react";
+
 import NeuroInput from "./NeuroInput";
 import WorkspaceChat from "./WorkspaceChat";
-export default function WorkspaceHero() {
+
+export default function WorkspaceHero({
+  setDatasetMeta,
+}) {
   const [analysis, setAnalysis] =
-  useState(null);
+    useState(null);
 
   const [loading, setLoading] =
-  useState(false);
+    useState(false);
+
   return (
     <section
       className={`
@@ -89,11 +94,13 @@ export default function WorkspaceHero() {
       </p>
 
       <div className="w-full mt-12">
-
         {!analysis && (
           <NeuroInput
             setAnalysis={setAnalysis}
             setLoading={setLoading}
+            setDatasetMeta={
+              setDatasetMeta
+            }
           />
         )}
 
@@ -101,7 +108,6 @@ export default function WorkspaceHero() {
           analysis={analysis}
           loading={loading}
         />
-
       </div>
     </section>
   );

@@ -11,7 +11,8 @@ import {
   getCurrentUser,
 } from "../api/client";
 
-const AuthContext = createContext();
+const AuthContext =
+  createContext();
 
 export function AuthProvider({
   children,
@@ -28,43 +29,75 @@ export function AuthProvider({
         "neurosync_token"
       );
 
-    if (token) {
-      getCurrentUser()
-        .then((res) =>
-          setUser(res.data)
-        )
-        .catch(() =>
-          localStorage.removeItem(
-            "neurosync_token"
-          )
-        )
-        .finally(() =>
-          setLoading(false)
-        );
-    } else {
+    if (!token) {
       setLoading(false);
+      return;
     }
+
+    getCurrentUser()
+      .then((res) => {
+        setUser(
+          res.data.data
+        );
+      })
+      .catch(() => {
+        // Invalid/expired token
+        localStorage.removeItem(
+          "neurosync_token"
+        );
+
+        localStorage.removeItem(
+          "token"
+        );
+
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const login = async (
     email,
     password
   ) => {
-    const res =
-      await loginUser({
-        email,
-        password,
-      });
+    try {
+      const res =
+        await loginUser({
+          email,
+          password,
+        });
 
-    localStorage.setItem(
-      "neurosync_token",
-      res.data.access_token
-    );
+      const accessToken =
+        res.data.data
+          .access_token;
 
-    const me =
-      await getCurrentUser();
+      // Store token
+      localStorage.setItem(
+        "neurosync_token",
+        accessToken
+      );
 
-    setUser(me.data);
+      // Remove legacy token
+      localStorage.removeItem(
+        "token"
+      );
+
+      const me =
+        await getCurrentUser();
+
+      setUser(
+        me.data.data
+      );
+
+    } catch (err) {
+      console.error(
+        "LOGIN ERROR:",
+        err
+      );
+
+      throw err;
+    }
   };
 
   const register = async (
@@ -79,23 +112,52 @@ export function AuthProvider({
         password,
       });
 
+    const accessToken =
+      res.data.data
+        .access_token;
+
     localStorage.setItem(
       "neurosync_token",
-      res.data.access_token
+      accessToken
+    );
+
+    localStorage.removeItem(
+      "token"
     );
 
     const me =
       await getCurrentUser();
 
-    setUser(me.data);
+    setUser(
+      me.data.data
+    );
   };
 
   const logout = () => {
+    // Clear all auth data
     localStorage.removeItem(
       "neurosync_token"
     );
 
+    localStorage.removeItem(
+      "token"
+    );
+
+    // Optional:
+    // Clear dataset state
+    localStorage.removeItem(
+      "dataset_id"
+    );
+
+    localStorage.removeItem(
+      "dataset_meta"
+    );
+
     setUser(null);
+
+    // Force redirect
+    window.location.href =
+      "/auth";
   };
 
   return (
@@ -113,5 +175,7 @@ export function AuthProvider({
   );
 }
 
-export const useAuth = () =>
-  useContext(AuthContext);
+export const useAuth =
+  () => useContext(
+    AuthContext
+  );

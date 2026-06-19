@@ -1,11 +1,22 @@
 import axios from "axios";
-
+export const chatWithAI = (
+  message,
+  datasetId
+) =>
+  api.post("/ai/chat", {
+    message,
+    dataset_id:
+      datasetId,
+  });
 const api = axios.create({
   baseURL: "http://localhost:8000",
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+export const getDatasets = () =>
+  api.get("/dataset/");
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("neurosync_token");

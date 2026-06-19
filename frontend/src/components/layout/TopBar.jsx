@@ -1,60 +1,128 @@
 export default function TopBar() {
-return (
-<div
-className="
-h-[72px]
-px-8
-flex
-items-center
-justify-between
-border-b
-"
-style={{
-borderColor:
-"var(--border)",
-}}
-> <div>
-<div
-className="text-xs"
-style={{
-color:
-"var(--text-secondary)",
-}}
->
-Workspace </div>
+  const datasetId =
+    localStorage.getItem(
+      "dataset_id"
+    );
 
-```
-    <h1
+  return (
+    <header
       className="
-        font-display
-        text-xl
-        font-bold
-      "
-    >
-      NeuroSync Dashboard
-    </h1>
-  </div>
-
-  <div className="flex items-center gap-3">
-    <div
-      className="
-        px-3
-        py-2
-        rounded-lg
-        text-sm
+        h-[80px]
+        px-8
+        flex
+        items-center
+        justify-between
+        border-b
+        sticky
+        top-0
+        z-50
+        backdrop-blur-xl
       "
       style={{
+        borderColor:
+          "rgba(255,255,255,0.06)",
+
         background:
-          "rgba(34,211,238,0.08)",
-        color:
-          "var(--cyan)",
+          "rgba(5,5,5,0.55)",
       }}
     >
-      Connected
-    </div>
-  </div>
-</div>
+      {/* Left */}
+      <div>
+        <p
+          className="
+            text-xs
+            uppercase
+            tracking-[0.25em]
+          "
+          style={{
+            color:
+              "#E7B75F",
+          }}
+        >
+          NeuroSync AI
+        </p>
 
+        <h1
+          className="
+            font-display
+            text-2xl
+            font-bold
+          "
+        >
+          Executive Command
+          Center
+        </h1>
+      </div>
 
-);
+      {/* Right */}
+      <div
+        className="
+          flex
+          items-center
+          gap-4
+        "
+      >
+        {datasetId && (
+          <div
+            className="
+              px-4
+              py-2
+              rounded-xl
+              text-sm
+            "
+            style={{
+              background:
+                "rgba(255,255,255,0.03)",
+
+              border:
+                "1px solid rgba(255,255,255,0.08)",
+
+              color:
+                "var(--text-secondary)",
+            }}
+          >
+            Dataset #
+            {datasetId}
+          </div>
+        )}
+
+        <div
+          className="
+            px-4
+            py-2
+            rounded-xl
+            text-sm
+            flex
+            items-center
+            gap-2
+          "
+          style={{
+            background:
+              "rgba(16,185,129,0.08)",
+
+            border:
+              "1px solid rgba(16,185,129,0.15)",
+
+            color:
+              "#10B981",
+          }}
+        >
+          <div
+            className="
+              w-2
+              h-2
+              rounded-full
+              animate-pulse
+            "
+            style={{
+              background:
+                "#10B981",
+            }}
+          />
+
+          AI Online
+        </div>
+      </div>
+    </header>
+  );
 }
