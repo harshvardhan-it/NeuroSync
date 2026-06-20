@@ -1,7 +1,7 @@
 import logging
 import os
 
-LOG_DIR = "logs"
+LOG_DIR = "backend/logs"
 
 os.makedirs(
     LOG_DIR,
@@ -10,7 +10,7 @@ os.makedirs(
 
 LOG_FILE = os.path.join(
     LOG_DIR,
-    "app.log"
+    "neurosync.log"
 )
 
 logging.basicConfig(
@@ -27,4 +27,6 @@ logging.basicConfig(
     ]
 )
 
-logger = logging.getLogger("NeuroSync")
+logger = logging.getLogger(
+    "NeuroSync"
+)

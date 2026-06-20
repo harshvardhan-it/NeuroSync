@@ -5,6 +5,22 @@ export default function DecisionEngine({
     summary?.top_decision ||
     "No strategic decision available";
 
+  const topDecision =
+    summary?.priority_decisions?.[0] || {};
+
+  const confidence =
+    topDecision?.confidence
+      ? `${topDecision.confidence}%`
+      : "--";
+
+  const priority =
+    topDecision?.priority ||
+    "--";
+
+  const urgency =
+    topDecision?.urgency ||
+    "--";
+
   return (
     <section
       className="
@@ -143,17 +159,17 @@ export default function DecisionEngine({
         >
           <MiniMetric
             label="Confidence"
-            value="92%"
-          />
-
-          <MiniMetric
-            label="Impact"
-            value="High"
+            value={confidence}
           />
 
           <MiniMetric
             label="Priority"
-            value="Immediate"
+            value={priority}
+          />
+
+          <MiniMetric
+            label="Urgency"
+            value={urgency}
           />
         </div>
 

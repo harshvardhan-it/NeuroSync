@@ -42,6 +42,12 @@ class ExecutiveSummaryService:
                     "Unknown"
                 ),
 
+            "priority_decisions":
+                decisions.get(
+                    "priority_decisions",
+                    []
+                ),
+
             "risk_level":
                 risk.get(
                     "risk_level",
