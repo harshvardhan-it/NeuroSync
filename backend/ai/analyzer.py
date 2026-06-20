@@ -4,7 +4,9 @@ from backend.ai.recommendation_engine import generate_recommendations
 from backend.ai.anomaly_engine import AnomalyEngine
 from backend.ai.risk_engine import RiskAssessmentEngine
 
+from backend.services.validation_service import ValidationService
 from backend.services.decision_engine import DecisionEngine
+
 from backend.engines.forecast_engine import ForecastEngine
 
 
@@ -103,18 +105,30 @@ def analyze_dataframe(df):
 
     total_columns = len(df.columns)
 
-    missing_values = int(
-        df.isnull().sum().sum()
-    )
-
-    duplicate_rows = int(
-        df.duplicated().sum()
-    )
-
     numeric_columns = list(
         df.select_dtypes(
             include=["number"]
         ).columns
+    )
+
+    # ==========================================================
+    # VALIDATION SERVICE
+    # ==========================================================
+
+    validation = (
+        ValidationService.validate_dataset(df)
+    )
+
+    missing_values = (
+        validation["missing_values"]
+    )
+
+    duplicate_rows = (
+        validation["duplicate_rows"]
+    )
+
+    quality_score = (
+        validation["quality_score"]
     )
 
     # ==========================================================
@@ -134,27 +148,6 @@ def analyze_dataframe(df):
             df,
             business_info["business_metrics"]
         )
-    )
-
-    # ==========================================================
-    # DATA QUALITY
-    # ==========================================================
-
-    quality_score = 100
-
-    quality_score -= min(
-        missing_values * 2,
-        40
-    )
-
-    quality_score -= min(
-        duplicate_rows * 5,
-        30
-    )
-
-    quality_score = max(
-        0,
-        quality_score
     )
 
     # ==========================================================
@@ -234,7 +227,10 @@ def analyze_dataframe(df):
         generate_recommendations(
             business_info,
             anomalies,
-            forecast_results.get("forecasts", [])
+            forecast_results.get(
+                "forecasts",
+                []
+            )
         )
     )
 
@@ -281,6 +277,7 @@ def analyze_dataframe(df):
         "business_understanding": business_info,
         "executive_summary": executive_summary,
         "quality_score": quality_score,
+        "validation": validation,
         "insights": insights,
         "kpis": kpis,
         "anomalies": anomalies,
