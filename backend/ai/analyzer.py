@@ -249,7 +249,9 @@ def analyze_dataframe(df):
             kpis,
             insights,
             recommendations,
-            anomalies
+            anomalies,
+            forecast_results,
+            risk_assessment
         )
     )
 
