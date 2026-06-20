@@ -10,10 +10,26 @@ from backend.routes.ai import (
     router as ai_router
 )
 
+from backend.utils.exceptions import (
+    NeuroSyncException,
+    neurosync_exception_handler,
+    generic_exception_handler
+)
+
 
 app = FastAPI(
     title="NeuroSync API",
     version="1.0.0"
+)
+
+app.add_exception_handler(
+    NeuroSyncException,
+    neurosync_exception_handler
+)
+
+app.add_exception_handler(
+    Exception,
+    generic_exception_handler
 )
 
 create_db_and_tables()
