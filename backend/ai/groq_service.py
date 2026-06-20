@@ -13,11 +13,45 @@ client = Groq(
 
 MODEL = "llama-3.3-70b-versatile"
 
+def build_executive_context(
+    analysis: dict | None
+) -> str:
+
+    if not analysis:
+        return "No analysis available."
+
+    return f"""
+KPIs:
+{analysis.get("kpis", {})}
+
+Insights:
+{analysis.get("insights", [])}
+
+Risk Assessment:
+{analysis.get("risk_assessment", {})}
+
+Forecasts:
+{analysis.get("forecasts", {})}
+
+Recommendations:
+{analysis.get("recommendations", [])}
+
+Decisions:
+{analysis.get("decisions", {})}
+
+Executive Summary:
+{analysis.get("executive_summary", {})}
+"""
 
 def ask_ai(
     message: str,
     analysis: dict = None
 ) -> str:
+    executive_context = (
+        build_executive_context(
+            analysis
+        )
+    )
 
     try:
 
@@ -27,9 +61,9 @@ You are NeuroSync AI.
 You are an executive business analyst,
 not a report generator.
 
-DATASET ANALYSIS:
+EXECUTIVE CONTEXT:
 
-{analysis}
+{executive_context}
 
 USER QUESTION:
 
