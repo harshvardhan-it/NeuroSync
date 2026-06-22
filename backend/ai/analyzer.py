@@ -1,3 +1,4 @@
+import logging
 from backend.ai.kpi_engine import calculate_kpis
 from backend.ai.insight_engine import generate_kpi_insights
 from backend.ai.recommendation_engine import generate_recommendations
@@ -9,6 +10,9 @@ from backend.services.decision_engine import DecisionEngine
 
 from backend.engines.forecast_engine import ForecastEngine
 
+from backend.services.root_cause_service import RootCauseService
+
+logger = logging.getLogger(__name__)
 
 def detect_business_columns(df):
 
@@ -252,6 +256,39 @@ def analyze_dataframe(df):
     )
 
     # ==========================================================
+    # ROOT CAUSE ANALYSIS
+    # ==========================================================
+
+    try:
+
+        logger.info(
+            "Starting Root Cause Analysis..."
+        )
+
+        root_cause_analysis = (
+            RootCauseService.generate(df)
+        )
+
+        logger.info(
+            "Root Cause Analysis completed."
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Root Cause Analysis failed: %s",
+            str(e)
+        )
+
+        root_cause_analysis = {
+            "status": "failed",
+            "root_causes": [],
+            "executive_diagnosis":
+                "Root Cause Analysis unavailable.",
+            "confidence_score": 0
+        }
+
+    # ==========================================================
     # EXECUTIVE SUMMARY
     # ==========================================================
 
@@ -274,15 +311,40 @@ def analyze_dataframe(df):
             "columns": total_columns,
             "numeric_columns": numeric_columns
         },
-        "business_understanding": business_info,
-        "executive_summary": executive_summary,
-        "quality_score": quality_score,
-        "validation": validation,
-        "insights": insights,
-        "kpis": kpis,
-        "anomalies": anomalies,
-        "risk_assessment": risk_assessment,
-        "forecast_engine": forecast_results,
-        "recommendations": recommendations,
-        "decisions": decisions
+
+        "business_understanding":
+            business_info,
+
+        "executive_summary":
+            executive_summary,
+
+        "quality_score":
+            quality_score,
+
+        "validation":
+            validation,
+
+        "insights":
+            insights,
+
+        "kpis":
+            kpis,
+
+        "anomalies":
+            anomalies,
+
+        "risk_assessment":
+            risk_assessment,
+
+        "forecast_engine":
+            forecast_results,
+
+        "recommendations":
+            recommendations,
+
+        "decisions":
+            decisions,
+
+        "root_cause_analysis":
+            root_cause_analysis
     }

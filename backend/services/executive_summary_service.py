@@ -28,6 +28,35 @@ class ExecutiveSummaryService:
             []
         )
 
+        rca = analysis.get(
+            "root_cause_analysis",
+            {}
+        )
+
+        root_causes = rca.get(
+            "root_causes",
+            []
+        )
+
+        top_root_cause = None
+        highest_impact_issue = None
+
+        if root_causes:
+
+            highest_impact_issue = max(
+                root_causes,
+                key=lambda x: x.get(
+                    "impact_score",
+                    0
+                )
+            )
+
+            top_root_cause = (
+                highest_impact_issue.get(
+                    "issue"
+                )
+            )
+
         return {
 
             "health_score":
@@ -95,5 +124,49 @@ class ExecutiveSummaryService:
                 forecast.get(
                     "status",
                     "Unknown"
-                )
+                ),
+
+            # =====================================
+            # ROOT CAUSE ANALYSIS
+            # =====================================
+
+            "executive_diagnosis":
+                rca.get(
+                    "executive_diagnosis",
+                    "No diagnosis available."
+                ),
+
+            "top_root_cause":
+                top_root_cause,
+
+            "rca_confidence_score":
+                rca.get(
+                    "confidence_score",
+                    0
+                ),
+
+            "highest_impact_issue": {
+                "issue":
+                    highest_impact_issue.get(
+                        "issue"
+                    )
+                    if highest_impact_issue
+                    else None,
+
+                "impact_score":
+                    highest_impact_issue.get(
+                        "impact_score",
+                        0
+                    )
+                    if highest_impact_issue
+                    else 0,
+
+                "severity":
+                    highest_impact_issue.get(
+                        "severity",
+                        "Unknown"
+                    )
+                    if highest_impact_issue
+                    else "Unknown"
+            }
         }
