@@ -133,11 +133,37 @@ export default function AICopilot({
     );
   }
 
-  const prompts = [
-    "Why is risk high?",
-    "Summarize my dataset",
-    "Suggest cost optimizations",
-    "What are anomalies?",
+  const executiveActions = [
+    {
+      title: "Business Diagnosis",
+      icon: "🩺",
+      prompt:
+        "Provide a complete business diagnosis. Identify key problems, risks, strengths, and business health."
+    },
+    {
+      title: "Risk Review",
+      icon: "⚠️",
+      prompt:
+        "Review all business risks, explain severity, impact, and mitigation strategies."
+    },
+    {
+      title: "Growth Opportunities",
+      icon: "📈",
+      prompt:
+        "Identify growth opportunities, revenue expansion strategies, and high-potential business areas."
+    },
+    {
+      title: "Cost Optimization",
+      icon: "💰",
+      prompt:
+        "Analyze expenses and recommend cost optimization opportunities with business impact."
+    },
+    {
+      title: "Executive Summary",
+      icon: "📋",
+      prompt:
+        "Generate a CFO-style executive summary including KPIs, risks, forecasts, and strategic actions."
+    }
   ];
 
   return (
@@ -171,15 +197,27 @@ export default function AICopilot({
           justify-between
         "
       >
-        <h2
-          className="
-            text-2xl
-            font-display
-            font-bold
-          "
-        >
-          🤖 NeuroSync AI Copilot
-        </h2>
+        <div>
+          <h2
+            className="
+              text-2xl
+              font-display
+              font-bold
+            "
+          >
+            🧠 Executive AI Consultant
+          </h2>
+
+          <p
+            className="text-sm mt-1"
+            style={{
+              color:
+                "var(--text-secondary)",
+            }}
+          >
+            CFO-style business intelligence powered by Groq
+          </p>
+        </div>
 
         {messages.length > 0 && (
           <button
@@ -261,46 +299,73 @@ export default function AICopilot({
         </div>
       </div>
 
-      {/* Suggested Prompts */}
+
+      {/* Executive Quick Actions */}
 
       {messages.length === 0 && (
-        <div
-          className="
-            flex
-            flex-wrap
-            gap-2
-            mb-5
-          "
-        >
-          {prompts.map(
-            (prompt) => (
+        <div className="mb-6">
+          <div
+            className="
+              text-sm
+              uppercase
+              tracking-wider
+              mb-3
+              opacity-70
+            "
+          >
+            Executive Quick Actions
+          </div>
+
+          <div
+            className="
+              grid
+              grid-cols-1
+              md:grid-cols-2
+              xl:grid-cols-3
+              gap-3
+            "
+          >
+            {executiveActions.map((action) => (
               <button
-                key={prompt}
+                key={action.title}
                 onClick={() =>
-                  sendMessage(
-                    prompt
-                  )
+                  sendMessage(action.prompt)
                 }
                 className="
-                  px-3
-                  py-2
-                  rounded-full
-                  text-sm
-                  hover:scale-105
+                  p-4
+                  rounded-2xl
+                  text-left
+                  hover:scale-[1.02]
                   transition-all
+                  group
                 "
                 style={{
                   background:
-                    "rgba(255,255,255,0.05)",
-
+                    "rgba(255,255,255,0.04)",
                   border:
                     "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                {prompt}
+                <div className="text-3xl mb-3">
+                  {action.icon}
+                </div>
+
+                <div className="font-semibold text-base">
+                  {action.title}
+                </div>
+
+                <div
+                  className="text-sm mt-2"
+                  style={{
+                    color:
+                      "var(--text-secondary)",
+                  }}
+                >
+                  Launch executive analysis
+                </div>
               </button>
-            )
-          )}
+            ))}
+          </div>
         </div>
       )}
 
@@ -333,16 +398,16 @@ export default function AICopilot({
                 🤖
               </div>
 
-              <h3 className="text-xl font-semibold mb-2">
-                NeuroSync Executive Copilot
+              <h3 className="text-2xl font-semibold mb-2">
+                NeuroSync Executive Consultant
               </h3>
 
-              <p>
-                Ask questions about
-                risks, profitability,
-                forecasts, anomalies,
-                and strategic
-                decisions.
+              <p className="max-w-xl">
+                Analyze business performance,
+                diagnose operational risks,
+                discover growth opportunities,
+                optimize costs, and generate
+                CFO-style strategic recommendations.
               </p>
             </div>
           </div>
@@ -457,7 +522,7 @@ export default function AICopilot({
               sendMessage();
             }
           }}
-          placeholder="Ask about your dataset..."
+          placeholder="Ask a strategic business question..."
           className="
             flex-1
             px-4

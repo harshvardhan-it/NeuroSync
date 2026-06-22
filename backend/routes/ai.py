@@ -3,8 +3,11 @@ from pydantic import BaseModel
 from sqlmodel import Session
 
 from backend.ai.groq_service import ask_ai
-from backend.models.dataset import Dataset
+from backend.ai.conversation_context import (
+    conversation_manager
+)
 
+from backend.models.dataset import Dataset
 from backend.utils.database import get_session
 
 router = APIRouter(
@@ -34,11 +37,28 @@ def chat(
             detail="Dataset not found"
         )
 
-    analysis = dataset.analysis_result or {}
+    analysis = (
+        dataset.analysis_result
+        or {}
+    )
 
-    # Build a clean AI context instead of
-    # sending the entire raw analysis object
     analysis_context = {
+
+        "business_status":
+            analysis.get(
+                "business_status"
+            ),
+
+        "health_score":
+            analysis.get(
+                "health_score"
+            ),
+
+        "business_understanding":
+            analysis.get(
+                "business_understanding"
+            ),
+
         "executive_summary":
             analysis.get(
                 "executive_summary"
@@ -90,9 +110,29 @@ def chat(
             )
     }
 
+    history = (
+        conversation_manager
+        .build_context(
+            data.dataset_id
+        )
+    )
+
     response = ask_ai(
         message=data.message,
-        analysis=analysis_context
+        analysis=analysis_context,
+        conversation_history=history
+    )
+
+    conversation_manager.add_message(
+        data.dataset_id,
+        "user",
+        data.message
+    )
+
+    conversation_manager.add_message(
+        data.dataset_id,
+        "assistant",
+        response
     )
 
     return {
