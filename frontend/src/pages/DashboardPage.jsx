@@ -9,7 +9,7 @@ import ExecutiveSummary from "../components/dashboard/ExecutiveSummary";
 import IntelligenceGrid from "../components/dashboard/IntelligenceGrid";
 import ThinkingTimeline from "../components/dashboard/ThinkingTimeline";
 import ActionPlan from "../components/dashboard/ActionPlan";
-
+import ScenarioSimulationPanel from "../components/dashboard/ScenarioSimulationPanel";
 import { getExecutiveSummary } from "../api/client";
 
 export default function DashboardPage() {
@@ -166,6 +166,10 @@ export default function DashboardPage() {
 
           <ExecutiveSummary
             summary={summary}
+          />
+
+          <ScenarioSimulationPanel
+            simulations={summary}
           />
 
           <ThinkingTimeline

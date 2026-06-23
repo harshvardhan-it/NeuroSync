@@ -1,12 +1,14 @@
 export default function ScenarioSimulationPanel({
   simulations,
 }) {
-  const bestScenario =
-    simulations?.best_scenario;
+ const bestScenario =
+  simulations?.best_scenario;
 
-  const scenarios =
-    simulations?.results || [];
+const scenarioCount =
+  simulations?.scenario_count || 0;
 
+const recommendation =
+  simulations?.simulation_recommendation;
   return (
     <section
       className="
@@ -141,34 +143,74 @@ export default function ScenarioSimulationPanel({
             ₹
             {
               bestScenario
-                ?.projected_metrics
                 ?.profit_impact
             }
           </div>
         </div>
       )}
 
-      {/* Scenario Cards */}
-
       <div
         className="
           grid
-          grid-cols-1
-          lg:grid-cols-3
+          md:grid-cols-3
           gap-6
         "
       >
-        {scenarios.map(
-          (
-            scenario,
-            index
-          ) => (
-            <ScenarioCard
-              key={index}
-              scenario={scenario}
-            />
-          )
-        )}
+        <Metric
+          label="Scenarios Tested"
+          value={scenarioCount}
+        />
+
+        <Metric
+          label="Impact Level"
+          value={
+            bestScenario?.impact_level
+          }
+        />
+
+        <Metric
+          label="Confidence"
+          value={`${bestScenario?.confidence_score || 0}%`}
+        />
+      </div>
+
+      <div
+        className="
+          mt-8
+          rounded-2xl
+          p-6
+        "
+        style={{
+          background:
+            "rgba(255,255,255,0.02)",
+
+          border:
+            "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <p
+          className="
+            text-xs
+            uppercase
+            tracking-widest
+            mb-3
+          "
+          style={{
+            color:
+              "var(--gold-primary)",
+          }}
+        >
+          Executive Recommendation
+        </p>
+
+        <p
+          style={{
+            color:
+              "var(--text-secondary)",
+          }}
+        >
+          {recommendation}
+        </p>
       </div>
     </section>
   );
