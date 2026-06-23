@@ -48,6 +48,11 @@ class ExecutiveSummaryService:
             {}
         )
 
+        causal_analysis = analysis.get(
+            "causal_analysis",
+            {}
+        )
+
         revenue_drivers = correlation.get(
             "revenue_drivers",
             []
@@ -176,6 +181,45 @@ class ExecutiveSummaryService:
         top_failure = (
             single_points_of_failure[0]
             if single_points_of_failure
+            else {}
+        )
+
+        causal_chains = (
+            causal_analysis.get(
+                "causal_chains",
+                []
+            )
+        )
+
+        root_drivers = (
+            causal_analysis.get(
+                "root_drivers",
+                []
+            )
+        )
+
+        business_levers = (
+            causal_analysis.get(
+                "business_levers",
+                []
+            )
+        )
+
+        top_causal_chain = (
+            causal_chains[0]
+            if causal_chains
+            else {}
+        )
+
+        top_root_driver = (
+            root_drivers[0]
+            if root_drivers
+            else {}
+        )
+
+        top_business_lever = (
+            business_levers[0]
+            if business_levers
             else {}
         )
 
@@ -342,6 +386,31 @@ class ExecutiveSummaryService:
 
             "single_point_of_failure":
                 top_failure,    
+
+            # =====================================
+            # CAUSAL INTELLIGENCE
+            # =====================================
+
+            "causal_summary":
+                causal_analysis.get(
+                    "executive_explanation",
+                    ""
+                ),
+
+            "causal_confidence_score":
+                causal_analysis.get(
+                    "confidence_score",
+                    0
+                ),
+
+            "top_causal_chain":
+                top_causal_chain,
+
+            "top_root_driver":
+                top_root_driver,
+
+            "top_business_lever":
+                top_business_lever,
 
             # =====================================
             # SCENARIO SIMULATION
