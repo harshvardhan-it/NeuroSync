@@ -19,6 +19,9 @@ from backend.engines.correlation_engine import (
 from backend.engines.dependency_engine import (
     DependencyEngine
 )
+from backend.engines.causal_engine import (
+    CausalEngine
+)
 
 logger = logging.getLogger(__name__)
 
@@ -375,6 +378,44 @@ def analyze_dataframe(df):
         }
 
     # ==========================================================
+    # CAUSAL INTELLIGENCE
+    # ==========================================================
+
+    try:
+
+        logger.info(
+            "Starting Causal Intelligence..."
+        )
+
+        causal_analysis = (
+            CausalEngine.analyze(
+                correlation_analysis,
+                dependency_analysis
+            )
+        )
+
+        logger.info(
+            "Causal Intelligence completed."
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Causal Intelligence failed: %s",
+            str(e)
+        )
+
+        causal_analysis = {
+            "status": "error",
+            "causal_chains": [],
+            "root_drivers": [],
+            "business_levers": [],
+            "executive_explanation":
+                "Causal analysis unavailable.",
+            "confidence_score": 0
+        }
+
+    # ==========================================================
     # SCENARIO SIMULATION
     # ==========================================================
 
@@ -487,7 +528,9 @@ def analyze_dataframe(df):
         "dependency_analysis":
             dependency_analysis,
        
-        
+        "causal_analysis":
+            causal_analysis,
+            
         "scenario_simulations":
             scenario_simulations
     }
