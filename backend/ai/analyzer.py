@@ -13,6 +13,10 @@ from backend.services.decision_engine import DecisionEngine
 from backend.engines.forecast_engine import ForecastEngine
 
 from backend.services.root_cause_service import RootCauseService
+from backend.engines.correlation_engine import (
+    CorrelationEngine
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -290,6 +294,46 @@ def analyze_dataframe(df):
             "confidence_score": 0
         }
 
+
+    # ==========================================================
+    # CORRELATION INTELLIGENCE
+    # ==========================================================
+
+    try:
+
+        logger.info(
+            "Starting Correlation Intelligence..."
+        )
+
+        correlation_analysis = (
+            CorrelationEngine.analyze(df)
+        )
+
+        logger.info(
+            "Correlation Intelligence completed."
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Correlation Intelligence failed: %s",
+            str(e)
+        )
+
+        correlation_analysis = {
+            "status": "failed",
+            "correlation_matrix": {},
+            "top_positive_drivers": [],
+            "top_negative_drivers": [],
+            "revenue_drivers": [],
+            "profit_drivers": [],
+            "customer_drivers": [],
+            "business_impact_ranking": [],
+            "executive_interpretation":
+                "Correlation analysis unavailable.",
+            "confidence_score": 0
+        }
+
     # ==========================================================
     # SCENARIO SIMULATION
     # ==========================================================
@@ -396,6 +440,9 @@ def analyze_dataframe(df):
 
         "root_cause_analysis":
             root_cause_analysis,
+
+        "correlation_analysis":
+            correlation_analysis,    
         
         "scenario_simulations":
             scenario_simulations
