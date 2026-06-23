@@ -43,6 +43,11 @@ class ExecutiveSummaryService:
             {}
         )
 
+        dependency_analysis = analysis.get(
+            "dependency_analysis",
+            {}
+        )
+
         revenue_drivers = correlation.get(
             "revenue_drivers",
             []
@@ -145,6 +150,32 @@ class ExecutiveSummaryService:
         top_business_driver = (
             business_impact_ranking[0]
             if business_impact_ranking
+            else {}
+        )
+
+        critical_dependencies = (
+            dependency_analysis.get(
+                "critical_dependencies",
+                []
+            )
+        )
+
+        single_points_of_failure = (
+            dependency_analysis.get(
+                "single_points_of_failure",
+                []
+            )
+        )
+
+        top_dependency = (
+            critical_dependencies[0]
+            if critical_dependencies
+            else {}
+        )
+
+        top_failure = (
+            single_points_of_failure[0]
+            if single_points_of_failure
             else {}
         )
 
@@ -288,6 +319,29 @@ class ExecutiveSummaryService:
 
             "top_business_driver":
                 top_business_driver,
+
+
+            # =====================================
+            # DEPENDENCY INTELLIGENCE
+            # =====================================
+
+            "dependency_summary":
+                dependency_analysis.get(
+                    "executive_summary",
+                    ""
+                ),
+
+            "dependency_confidence_score":
+                dependency_analysis.get(
+                    "confidence_score",
+                    0
+                ),
+
+            "top_dependency":
+                top_dependency,
+
+            "single_point_of_failure":
+                top_failure,    
 
             # =====================================
             # SCENARIO SIMULATION
