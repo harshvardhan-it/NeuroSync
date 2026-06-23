@@ -33,6 +33,25 @@ class ExecutiveSummaryService:
             {}
         )
 
+        scenario_simulations = analysis.get(
+            "scenario_simulations",
+            {}
+        )
+
+        best_scenario = (
+            scenario_simulations.get(
+                "best_scenario",
+                {}
+            )
+        )
+
+        scenario_results = (
+            scenario_simulations.get(
+                "results",
+                []
+            )
+        )
+
         root_causes = rca.get(
             "root_causes",
             []
@@ -56,6 +75,27 @@ class ExecutiveSummaryService:
                     "issue"
                 )
             )
+
+        scenario_count = len(
+            scenario_results
+        )
+
+        projected_profit_impact = (
+            best_scenario.get(
+                "projected_metrics",
+                {}
+            ).get(
+                "profit_impact",
+                0
+            )
+        )
+
+        simulation_recommendation = (
+            best_scenario.get(
+                "executive_summary",
+                ""
+            )
+        )
 
         return {
 
@@ -168,5 +208,37 @@ class ExecutiveSummaryService:
                     )
                     if highest_impact_issue
                     else "Unknown"
-            }
+            },
+
+            # =====================================
+            # SCENARIO SIMULATION
+            # =====================================
+
+            "scenario_count":
+                scenario_count,
+
+            "best_scenario": {
+                "scenario_type":
+                    best_scenario.get(
+                        "scenario_type"
+                    ),
+
+                "profit_impact":
+                    projected_profit_impact,
+
+                "impact_level":
+                    best_scenario.get(
+                        "impact_level",
+                        "Unknown"
+                    ),
+
+                "confidence_score":
+                    best_scenario.get(
+                        "confidence_score",
+                        0
+                    )
+            },
+
+            "simulation_recommendation":
+                simulation_recommendation
         }

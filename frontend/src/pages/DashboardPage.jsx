@@ -19,7 +19,6 @@ export default function DashboardPage() {
   const [loading, setLoading] =
     useState(true);
 
-  // Dynamic dataset metadata
   const dataset = JSON.parse(
     localStorage.getItem(
       "dataset_meta"
@@ -107,7 +106,6 @@ export default function DashboardPage() {
             lg:p-8
           "
         >
-          {/* Header */}
           <div>
             <p
               className="
@@ -154,37 +152,26 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* KPI Hero */}
           <ExecutiveHero
             summary={summary}
           />
 
-          {/* Dynamic Dataset Card */}
           <DatasetMetaCard
             dataset={dataset}
           />
 
-          {/* Decision Engine */}
           <DecisionEngine
             summary={summary}
           />
 
-          {/* Summary */}
           <ExecutiveSummary
             summary={summary}
           />
 
-          {/* Intelligence Grid */}
-          <IntelligenceGrid
-            summary={summary}
-          />
-
-          {/* Timeline */}
           <ThinkingTimeline
             summary={summary}
           />
 
-          {/* Action Plan */}
           <ActionPlan
             summary={summary}
           />
