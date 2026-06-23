@@ -16,7 +16,9 @@ from backend.services.root_cause_service import RootCauseService
 from backend.engines.correlation_engine import (
     CorrelationEngine
 )
-
+from backend.engines.dependency_engine import (
+    DependencyEngine
+)
 
 logger = logging.getLogger(__name__)
 
@@ -335,6 +337,44 @@ def analyze_dataframe(df):
         }
 
     # ==========================================================
+    # DEPENDENCY INTELLIGENCE
+    # ==========================================================
+
+    try:
+
+        logger.info(
+            "Starting Dependency Intelligence..."
+        )
+
+        dependency_analysis = (
+            DependencyEngine.analyze(
+                correlation_analysis
+            )
+        )
+
+        logger.info(
+            "Dependency Intelligence completed."
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Dependency Intelligence failed: %s",
+            str(e)
+        )
+
+        dependency_analysis = {
+            "status": "error",
+            "critical_dependencies": [],
+            "dependency_graph": {},
+            "single_points_of_failure": [],
+            "dependency_rankings": [],
+            "executive_summary":
+                "Dependency analysis unavailable.",
+            "confidence_score": 0
+        }
+
+    # ==========================================================
     # SCENARIO SIMULATION
     # ==========================================================
 
@@ -442,7 +482,11 @@ def analyze_dataframe(df):
             root_cause_analysis,
 
         "correlation_analysis":
-            correlation_analysis,    
+            correlation_analysis, 
+
+        "dependency_analysis":
+            dependency_analysis,
+       
         
         "scenario_simulations":
             scenario_simulations
