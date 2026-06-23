@@ -22,6 +22,9 @@ from backend.engines.dependency_engine import (
 from backend.engines.causal_engine import (
     CausalEngine
 )
+from backend.engines.strategic_leverage_engine import (
+    StrategicLeverageEngine
+)
 
 logger = logging.getLogger(__name__)
 
@@ -416,6 +419,45 @@ def analyze_dataframe(df):
         }
 
     # ==========================================================
+    # STRATEGIC LEVERAGE INTELLIGENCE
+    # ==========================================================
+
+    try:
+
+        logger.info(
+            "Starting Strategic Leverage Intelligence..."
+        )
+
+        strategic_leverage_analysis = (
+            StrategicLeverageEngine.analyze(
+                causal_analysis,
+                dependency_analysis,
+                scenario_simulations
+            )
+        )
+
+        logger.info(
+            "Strategic Leverage Intelligence completed."
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Strategic Leverage Intelligence failed: %s",
+            str(e)
+        )
+
+        strategic_leverage_analysis = {
+            "status": "error",
+            "strategic_levers": [],
+            "highest_roi_actions": [],
+            "executive_priorities": [],
+            "executive_explanation":
+                "Strategic leverage analysis unavailable.",
+            "confidence_score": 0
+        }
+
+    # ==========================================================
     # SCENARIO SIMULATION
     # ==========================================================
 
@@ -530,7 +572,11 @@ def analyze_dataframe(df):
        
         "causal_analysis":
             causal_analysis,
-            
+
+        "strategic_leverage_analysis":
+            strategic_leverage_analysis,
+    
+
         "scenario_simulations":
             scenario_simulations
     }
