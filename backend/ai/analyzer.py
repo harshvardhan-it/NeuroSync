@@ -4,7 +4,9 @@ from backend.ai.insight_engine import generate_kpi_insights
 from backend.ai.recommendation_engine import generate_recommendations
 from backend.ai.anomaly_engine import AnomalyEngine
 from backend.ai.risk_engine import RiskAssessmentEngine
-
+from backend.services.scenario_simulation_service import (
+    ScenarioSimulationService
+)
 from backend.services.validation_service import ValidationService
 from backend.services.decision_engine import DecisionEngine
 
@@ -289,6 +291,53 @@ def analyze_dataframe(df):
         }
 
     # ==========================================================
+    # SCENARIO SIMULATION
+    # ==========================================================
+
+    try:
+
+        scenario_simulations = (
+            ScenarioSimulationService.compare(
+                df,
+                [
+                    {
+                        "scenario_type":
+                        "revenue_growth",
+
+                        "percentage_change":
+                        15
+                    },
+                    {
+                        "scenario_type":
+                        "expense_reduction",
+
+                        "percentage_change":
+                        10
+                    },
+                    {
+                        "scenario_type":
+                        "customer_decline",
+
+                        "percentage_change":
+                        20
+                    }
+                ]
+            )
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Scenario simulation failed: %s",
+            str(e)
+        )
+
+        scenario_simulations = {
+            "status": "failed",
+            "results": []
+        }
+
+    # ==========================================================
     # EXECUTIVE SUMMARY
     # ==========================================================
 
@@ -346,5 +395,8 @@ def analyze_dataframe(df):
             decisions,
 
         "root_cause_analysis":
-            root_cause_analysis
+            root_cause_analysis,
+        
+        "scenario_simulations":
+            scenario_simulations
     }
