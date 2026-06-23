@@ -38,6 +38,33 @@ class ExecutiveSummaryService:
             {}
         )
 
+        correlation = analysis.get(
+            "correlation_analysis",
+            {}
+        )
+
+        revenue_drivers = correlation.get(
+            "revenue_drivers",
+            []
+        )
+
+        profit_drivers = correlation.get(
+            "profit_drivers",
+            []
+        )
+
+        customer_drivers = correlation.get(
+            "customer_drivers",
+            []
+        )
+
+        business_impact_ranking = (
+            correlation.get(
+                "business_impact_ranking",
+                []
+            )
+        )
+
         best_scenario = (
             scenario_simulations.get(
                 "best_scenario",
@@ -95,6 +122,30 @@ class ExecutiveSummaryService:
                 "executive_summary",
                 ""
             )
+        )
+
+        top_revenue_driver = (
+            revenue_drivers[0]
+            if revenue_drivers
+            else {}
+        )
+
+        top_profit_driver = (
+            profit_drivers[0]
+            if profit_drivers
+            else {}
+        )
+
+        top_customer_driver = (
+            customer_drivers[0]
+            if customer_drivers
+            else {}
+        )
+
+        top_business_driver = (
+            business_impact_ranking[0]
+            if business_impact_ranking
+            else {}
         )
 
         return {
@@ -209,6 +260,34 @@ class ExecutiveSummaryService:
                     if highest_impact_issue
                     else "Unknown"
             },
+
+            # =====================================
+            # CORRELATION INTELLIGENCE
+            # =====================================
+
+            "correlation_confidence_score":
+                correlation.get(
+                    "confidence_score",
+                    0
+                ),
+
+            "executive_correlation_summary":
+                correlation.get(
+                    "executive_interpretation",
+                    ""
+                ),
+
+            "top_revenue_driver":
+                top_revenue_driver,
+
+            "top_profit_driver":
+                top_profit_driver,
+
+            "top_customer_driver":
+                top_customer_driver,
+
+            "top_business_driver":
+                top_business_driver,
 
             # =====================================
             # SCENARIO SIMULATION

@@ -36,6 +36,21 @@ def build_executive_context(
         else []
     )
 
+    correlation_analysis = analysis.get(
+        "correlation_analysis",
+        {}
+    )
+
+    root_cause_analysis = analysis.get(
+        "root_cause_analysis",
+        {}
+    )
+
+    scenario_simulations = analysis.get(
+        "scenario_simulations",
+        {}
+    )
+
     return f"""
 BUSINESS STATUS
 {analysis.get("business_status", "Unknown")}
@@ -75,6 +90,15 @@ RECOMMENDATIONS
 
 DECISIONS
 {analysis.get("decisions", {})}
+
+ROOT CAUSE ANALYSIS
+{root_cause_analysis}
+
+CORRELATION INTELLIGENCE
+{correlation_analysis}
+
+SCENARIO SIMULATIONS
+{scenario_simulations}
 
 EXECUTIVE ACTION PLAN
 {analysis.get("executive_action_plan", [])}
@@ -156,11 +180,14 @@ DATA-DRIVEN REASONING RULES
 
 2. Always connect recommendations to:
 
-   - KPIs
-   - Risk scores
-   - Anomalies
-   - Forecasts
-   - Business status
+- KPIs
+- Risk scores
+- Anomalies
+- Forecasts
+- Business status
+- Root causes
+- Correlation drivers
+- Scenario outcomes
 
 3. Avoid generic consulting advice.
 
@@ -215,6 +242,8 @@ STRATEGIC REASONING RULES
    - CFO
    - CEO Advisor
    - Management Consultant
+   - Business Intelligence Analyst
+   - Strategic Planning Director
 
 9. Always provide reasoning before
    recommendations.
