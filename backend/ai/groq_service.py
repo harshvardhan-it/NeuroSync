@@ -36,6 +36,11 @@ def build_executive_context(
         {}
     )
 
+    strategic_leverage_analysis = analysis.get(
+        "strategic_leverage_analysis",
+        {}
+    )
+
     anomaly_count = len(
         anomalies
     )
@@ -112,6 +117,9 @@ DEPENDENCY INTELLIGENCE
 
 CAUSAL INTELLIGENCE
 {causal_analysis}
+
+STRATEGIC LEVERAGE INTELLIGENCE
+{strategic_leverage_analysis}
 
 SCENARIO SIMULATIONS
 {scenario_simulations}
@@ -208,6 +216,9 @@ DATA-DRIVEN REASONING RULES
 - Causal chains
 - Root business drivers
 - Business levers
+- Strategic levers
+- ROI opportunities
+- Executive priorities
 - Scenario outcomes
 
 DEPENDENCY INTELLIGENCE RULES
@@ -224,16 +235,16 @@ DEPENDENCY INTELLIGENCE RULES
 
 6. Explain the business impact if a critical dependency fails.
 
-3. Avoid generic consulting advice.
+7. Avoid generic consulting advice.
 
-4. Explain using:
+8. Explain using:
 
    Observation
    → Business Meaning
    → Impact
    → Recommendation
 
-5. Use actual numbers whenever available.
+9. Use actual numbers whenever available.
 
 Example:
 
@@ -267,6 +278,22 @@ CAUSAL INTELLIGENCE RULES
 6. Explain expected downstream effects of each recommendation.
 
 7. Connect recommendations to causal evidence whenever possible.
+
+STRATEGIC LEVERAGE RULES
+
+1. Identify the highest ROI actions.
+
+2. Prioritize executive interventions by business impact.
+
+3. Explain why a lever is strategically important.
+
+4. Focus on actions with the largest downstream effects.
+
+5. Recommend actions that maximize business value.
+
+6. Rank executive priorities by expected return.
+
+7. Connect recommendations to leverage evidence.
 
 STRATEGIC REASONING RULES
 
