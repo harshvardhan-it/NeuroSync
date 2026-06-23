@@ -31,6 +31,11 @@ def build_executive_context(
         {}
     )
 
+    causal_analysis = analysis.get(
+        "causal_analysis",
+        {}
+    )
+
     anomaly_count = len(
         anomalies
     )
@@ -104,6 +109,9 @@ CORRELATION INTELLIGENCE
 
 DEPENDENCY INTELLIGENCE
 {dependency_analysis}
+
+CAUSAL INTELLIGENCE
+{causal_analysis}
 
 SCENARIO SIMULATIONS
 {scenario_simulations}
@@ -197,6 +205,9 @@ DATA-DRIVEN REASONING RULES
 - Correlation drivers
 - Critical dependencies
 - Single points of failure
+- Causal chains
+- Root business drivers
+- Business levers
 - Scenario outcomes
 
 DEPENDENCY INTELLIGENCE RULES
@@ -240,6 +251,22 @@ flexibility and increase business risk.
 Recommendation:
 Prioritize margin improvement before
 market expansion.
+
+CAUSAL INTELLIGENCE RULES
+
+1. Identify business cause-effect chains.
+
+2. Explain why business outcomes occur.
+
+3. Distinguish drivers from symptoms.
+
+4. Prioritize root drivers over downstream metrics.
+
+5. Focus recommendations on high-leverage business actions.
+
+6. Explain expected downstream effects of each recommendation.
+
+7. Connect recommendations to causal evidence whenever possible.
 
 STRATEGIC REASONING RULES
 
