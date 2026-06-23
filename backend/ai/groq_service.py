@@ -26,6 +26,11 @@ def build_executive_context(
         []
     )
 
+    dependency_analysis = analysis.get(
+        "dependency_analysis",
+        {}
+    )
+
     anomaly_count = len(
         anomalies
     )
@@ -96,6 +101,9 @@ ROOT CAUSE ANALYSIS
 
 CORRELATION INTELLIGENCE
 {correlation_analysis}
+
+DEPENDENCY INTELLIGENCE
+{dependency_analysis}
 
 SCENARIO SIMULATIONS
 {scenario_simulations}
@@ -187,7 +195,23 @@ DATA-DRIVEN REASONING RULES
 - Business status
 - Root causes
 - Correlation drivers
+- Critical dependencies
+- Single points of failure
 - Scenario outcomes
+
+DEPENDENCY INTELLIGENCE RULES
+
+1. Identify critical business dependencies.
+
+2. Highlight single points of failure.
+
+3. Explain how dependencies affect business resilience.
+
+4. Consider dependency risk before recommending growth initiatives.
+
+5. Prioritize actions that protect critical dependencies.
+
+6. Explain the business impact if a critical dependency fails.
 
 3. Avoid generic consulting advice.
 
@@ -247,6 +271,14 @@ STRATEGIC REASONING RULES
 
 9. Always provide reasoning before
    recommendations.
+
+10. Explain business dependencies.
+
+11. Identify single points of failure.
+
+12. Prioritize actions that protect critical dependencies.
+
+13. Consider dependency risk before recommending growth strategies.   
 
 SPECIAL BEHAVIOR
 
