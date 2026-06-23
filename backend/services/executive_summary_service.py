@@ -53,6 +53,11 @@ class ExecutiveSummaryService:
             {}
         )
 
+        strategic_leverage_analysis = analysis.get(
+            "strategic_leverage_analysis",
+            {}
+        )
+
         revenue_drivers = correlation.get(
             "revenue_drivers",
             []
@@ -220,6 +225,45 @@ class ExecutiveSummaryService:
         top_business_lever = (
             business_levers[0]
             if business_levers
+            else {}
+        )
+
+        strategic_levers = (
+            strategic_leverage_analysis.get(
+                "strategic_levers",
+                []
+            )
+        )
+
+        highest_roi_actions = (
+            strategic_leverage_analysis.get(
+                "highest_roi_actions",
+                []
+            )
+        )
+
+        executive_priorities = (
+            strategic_leverage_analysis.get(
+                "executive_priorities",
+                []
+            )
+        )
+
+        top_strategic_lever = (
+            strategic_levers[0]
+            if strategic_levers
+            else {}
+        )
+
+        top_roi_action = (
+            highest_roi_actions[0]
+            if highest_roi_actions
+            else {}
+        )
+
+        top_executive_priority = (
+            executive_priorities[0]
+            if executive_priorities
             else {}
         )
 
@@ -442,5 +486,31 @@ class ExecutiveSummaryService:
             },
 
             "simulation_recommendation":
-                simulation_recommendation
+                simulation_recommendation,
+
+
+            # =====================================
+            # STRATEGIC LEVERAGE INTELLIGENCE
+            # =====================================
+
+            "strategic_leverage_summary":
+                strategic_leverage_analysis.get(
+                    "executive_explanation",
+                    ""
+                ),
+
+            "strategic_leverage_confidence_score":
+                strategic_leverage_analysis.get(
+                    "confidence_score",
+                    0
+                ),
+
+            "top_strategic_lever":
+                top_strategic_lever,
+
+            "top_roi_action":
+                top_roi_action,
+
+            "top_executive_priority":
+                top_executive_priority,    
         }
