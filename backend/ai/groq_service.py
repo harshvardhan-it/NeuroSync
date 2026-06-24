@@ -41,6 +41,11 @@ def build_executive_context(
         {}
     )
 
+    executive_optimization = analysis.get(
+        "executive_optimization",
+        {}
+    )
+
     anomaly_count = len(
         anomalies
     )
@@ -120,6 +125,9 @@ CAUSAL INTELLIGENCE
 
 STRATEGIC LEVERAGE INTELLIGENCE
 {strategic_leverage_analysis}
+
+EXECUTIVE OPTIMIZATION
+{executive_optimization}
 
 SCENARIO SIMULATIONS
 {scenario_simulations}
@@ -220,6 +228,10 @@ DATA-DRIVEN REASONING RULES
 - ROI opportunities
 - Executive priorities
 - Scenario outcomes
+- Optimal action plans
+- Executive priorities
+- Resource allocation
+- Expected business outcomes
 
 DEPENDENCY INTELLIGENCE RULES
 
@@ -294,6 +306,26 @@ STRATEGIC LEVERAGE RULES
 6. Rank executive priorities by expected return.
 
 7. Connect recommendations to leverage evidence.
+
+EXECUTIVE OPTIMIZATION RULES
+
+1. Prioritize actions by business value.
+
+2. Recommend execution order.
+
+3. Balance ROI against business risk.
+
+4. Explain resource allocation decisions.
+
+5. Focus on sustainable business impact.
+
+6. Explain expected business outcomes.
+
+7. Recommend optimized executive action plans.
+
+8. Rank actions by strategic value.
+
+9. Use optimization evidence when making recommendations.
 
 STRATEGIC REASONING RULES
 
