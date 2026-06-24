@@ -1,61 +1,28 @@
-# ======================
 # Python
-# ======================
-venv/
-.venv/
-env/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-
-# ======================
-# Environment Variables
-# ======================
 .env
-.env.*
-*.env
 
-# ======================
-# Database
-# ======================
-*.db
-*.sqlite3
-
-# ======================
-# Uploads
-# ======================
-uploads/
-
-# ======================
 # Logs
-# ======================
-*.log
+logs/
+backend/logs/
 
-# ======================
-# Node
-# ======================
-node_modules/
+# Generated Reports
+reports/
+backend/reports/
 
-# ======================
-# React/Vite
-# ======================
-dist/
-build/
+# Uploaded Files
+uploads/
+backend/uploads/
 
-# ======================
-# IDE
-# ======================
-.vscode/
-.idea/
+# Database
+*.db
+neurosync.db
 
-# ======================
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
 # OS
-# ======================
 .DS_Store
 Thumbs.db
-
-*.zip
-
-backend/reports/*
-*.pdf
