@@ -1,6 +1,16 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlmodel import Session
 
+from fastapi.responses import FileResponse
+
+from backend.services.pdf_report_service import (
+    PDFReportService
+)
+
+from backend.services.report_service import (
+    ReportService
+)
+
 from backend.services.executive_summary_service import (
     ExecutiveSummaryService
 )
@@ -435,3 +445,47 @@ def get_board_report(
         "success": True,
         "data": report
     }
+
+@router.get("/{dataset_id}/reports/executive/pdf")
+def download_executive_pdf(
+    dataset_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+
+    dataset = session.get(
+        Dataset,
+        dataset_id
+    )
+
+    if not dataset:
+        raise HTTPException(
+            status_code=404,
+            detail="Dataset not found"
+        )
+
+    if dataset.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    report = (
+        ReportService.generate_executive_report(
+            dataset.analysis_result
+        )
+    )
+
+    pdf_path = (
+        PDFReportService.generate_executive_pdf(
+            report,
+            dataset_id
+        )
+    )
+
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        filename=f"executive_report_{dataset_id}.pdf"
+    )
+
