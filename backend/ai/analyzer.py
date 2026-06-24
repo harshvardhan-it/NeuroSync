@@ -25,6 +25,9 @@ from backend.engines.causal_engine import (
 from backend.engines.strategic_leverage_engine import (
     StrategicLeverageEngine
 )
+from backend.engines.executive_optimization_engine import (
+    ExecutiveOptimizationEngine
+)
 
 logger = logging.getLogger(__name__)
 
@@ -458,6 +461,46 @@ def analyze_dataframe(df):
         }
 
     # ==========================================================
+    # EXECUTIVE OPTIMIZATION
+    # ==========================================================
+
+    try:
+
+        logger.info(
+            "Starting Executive Optimization..."
+        )
+
+        executive_optimization = (
+            ExecutiveOptimizationEngine.analyze(
+                strategic_leverage_analysis,
+                scenario_simulations,
+                risk_assessment
+            )
+        )
+
+        logger.info(
+            "Executive Optimization completed."
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Executive Optimization failed: %s",
+            str(e)
+        )
+
+        executive_optimization = {
+            "status": "error",
+            "optimal_action_plan": [],
+            "executive_priorities": [],
+            "resource_allocation": [],
+            "expected_business_outcomes": [],
+            "executive_explanation":
+                "Executive optimization unavailable.",
+            "confidence_score": 0
+        }
+
+    # ==========================================================
     # SCENARIO SIMULATION
     # ==========================================================
 
@@ -576,6 +619,8 @@ def analyze_dataframe(df):
         "strategic_leverage_analysis":
             strategic_leverage_analysis,
     
+        "executive_optimization":
+            executive_optimization,
 
         "scenario_simulations":
             scenario_simulations
