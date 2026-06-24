@@ -4,7 +4,9 @@ from sqlmodel import Session
 from backend.services.executive_summary_service import (
     ExecutiveSummaryService
 )
-
+from backend.services.report_service import (
+    ReportService
+)
 from backend.models.dataset import Dataset
 from backend.models.user import User
 
@@ -292,4 +294,144 @@ def get_user_datasets(
             }
             for d in datasets
         ]
+    }
+
+@router.get("/{dataset_id}/reports/executive")
+def get_executive_report(
+    dataset_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+
+    dataset = session.get(
+        Dataset,
+        dataset_id
+    )
+
+    if not dataset:
+        raise HTTPException(
+            status_code=404,
+            detail="Dataset not found"
+        )
+
+    if dataset.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    report = (
+        ReportService.generate_executive_report(
+            dataset.analysis_result
+        )
+    )
+
+    return {
+        "success": True,
+        "data": report
+    }
+
+@router.get("/{dataset_id}/reports/risk")
+def get_risk_report(
+    dataset_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+
+    dataset = session.get(
+        Dataset,
+        dataset_id
+    )
+
+    if not dataset:
+        raise HTTPException(
+            status_code=404,
+            detail="Dataset not found"
+        )
+
+    if dataset.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    report = (
+        ReportService.generate_risk_report(
+            dataset.analysis_result
+        )
+    )
+
+    return {
+        "success": True,
+        "data": report
+    }
+
+@router.get("/{dataset_id}/reports/growth")
+def get_growth_report(
+    dataset_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+
+    dataset = session.get(
+        Dataset,
+        dataset_id
+    )
+
+    if not dataset:
+        raise HTTPException(
+            status_code=404,
+            detail="Dataset not found"
+        )
+
+    if dataset.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    report = (
+        ReportService.generate_growth_report(
+            dataset.analysis_result
+        )
+    )
+
+    return {
+        "success": True,
+        "data": report
+    }
+
+@router.get("/{dataset_id}/reports/board")
+def get_board_report(
+    dataset_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+
+    dataset = session.get(
+        Dataset,
+        dataset_id
+    )
+
+    if not dataset:
+        raise HTTPException(
+            status_code=404,
+            detail="Dataset not found"
+        )
+
+    if dataset.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    report = (
+        ReportService.generate_board_report(
+            dataset.analysis_result
+        )
+    )
+
+    return {
+        "success": True,
+        "data": report
     }
