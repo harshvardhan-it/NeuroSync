@@ -55,5 +55,7 @@ build/
 .DS_Store
 Thumbs.db
 
-*.zipbackend/reports/*
+*.zip
+
+backend/reports/*
 *.pdf
