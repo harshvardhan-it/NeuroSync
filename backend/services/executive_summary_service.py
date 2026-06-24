@@ -58,6 +58,11 @@ class ExecutiveSummaryService:
             {}
         )
 
+        executive_optimization = analysis.get(
+            "executive_optimization",
+            {}
+        )
+        
         revenue_drivers = correlation.get(
             "revenue_drivers",
             []
@@ -264,6 +269,52 @@ class ExecutiveSummaryService:
         top_executive_priority = (
             executive_priorities[0]
             if executive_priorities
+            else {}
+        )
+
+        optimal_action_plan = (
+            executive_optimization.get(
+                "optimal_action_plan",
+                []
+            )
+        )
+
+        optimization_priorities = (
+            executive_optimization.get(
+                "executive_priorities",
+                []
+            )
+        )
+
+        resource_allocation = (
+            executive_optimization.get(
+                "resource_allocation",
+                []
+            )
+        )
+
+        expected_outcomes = (
+            executive_optimization.get(
+                "expected_business_outcomes",
+                []
+            )
+        )
+
+        top_optimized_action = (
+            optimal_action_plan[0]
+            if optimal_action_plan
+            else {}
+        )
+
+        top_optimization_priority = (
+            optimization_priorities[0]
+            if optimization_priorities
+            else {}
+        )
+
+        top_resource_allocation = (
+            resource_allocation[0]
+            if resource_allocation
             else {}
         )
 
@@ -512,5 +563,34 @@ class ExecutiveSummaryService:
                 top_roi_action,
 
             "top_executive_priority":
-                top_executive_priority,    
+                top_executive_priority,  
+
+
+            # =====================================
+            # EXECUTIVE OPTIMIZATION
+            # =====================================
+
+            "optimization_summary":
+                executive_optimization.get(
+                    "executive_explanation",
+                    ""
+                ),
+
+            "optimization_confidence_score":
+                executive_optimization.get(
+                    "confidence_score",
+                    0
+                ),
+
+            "top_optimized_action":
+                top_optimized_action,
+
+            "top_optimization_priority":
+                top_optimization_priority,
+
+            "top_resource_allocation":
+                top_resource_allocation,
+
+            "expected_business_outcomes":
+                expected_outcomes[:5],      
         }
