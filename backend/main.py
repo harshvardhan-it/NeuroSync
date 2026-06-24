@@ -1,13 +1,31 @@
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+from fastapi import Request
+from fastapi import HTTPException
 
-from backend.routes.auth import router as auth_router
-from backend.routes.dataset import router as dataset_router
-from backend.utils.database import create_db_and_tables
-from backend.utils.logger import logger
+from fastapi.responses import JSONResponse
+
+from fastapi.middleware.cors import (
+    CORSMiddleware
+)
+
+from backend.routes.auth import (
+    router as auth_router
+)
+
+from backend.routes.dataset import (
+    router as dataset_router
+)
+
 from backend.routes.ai import (
     router as ai_router
+)
+
+from backend.utils.database import (
+    create_db_and_tables
+)
+
+from backend.utils.logger import (
+    logger
 )
 
 from backend.utils.exceptions import (
@@ -16,11 +34,36 @@ from backend.utils.exceptions import (
     generic_exception_handler
 )
 
+from backend.config.settings import (
+    settings
+)
+
 
 app = FastAPI(
     title="NeuroSync API",
-    version="1.0.0"
+    version="2.0.0"
 )
+
+# ==========================================================
+# STARTUP
+# ==========================================================
+
+@app.on_event("startup")
+def startup_event():
+
+    logger.info(
+        "Starting NeuroSync..."
+    )
+
+    create_db_and_tables()
+
+    logger.info(
+        "Database initialized successfully."
+    )
+
+# ==========================================================
+# EXCEPTION HANDLERS
+# ==========================================================
 
 app.add_exception_handler(
     NeuroSyncException,
@@ -32,25 +75,12 @@ app.add_exception_handler(
     generic_exception_handler
 )
 
-create_db_and_tables()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 @app.exception_handler(HTTPException)
 async def http_exception_handler(
     request: Request,
     exc: HTTPException
 ):
+
     logger.warning(
         f"HTTP {exc.status_code}: {exc.detail}"
     )
@@ -59,8 +89,8 @@ async def http_exception_handler(
         status_code=exc.status_code,
         content={
             "success": False,
-            "error": exc.detail,
-        },
+            "error": exc.detail
+        }
     )
 
 
@@ -69,6 +99,7 @@ async def global_exception_handler(
     request: Request,
     exc: Exception
 ):
+
     logger.exception(
         f"Unhandled exception: {str(exc)}"
     )
@@ -77,14 +108,48 @@ async def global_exception_handler(
         status_code=500,
         content={
             "success": False,
-            "error": "Internal server error",
-        },
+            "error": "Internal server error"
+        }
     )
 
+# ==========================================================
+# CORS
+# ==========================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+# ==========================================================
+# ROUTERS
+# ==========================================================
 
 app.include_router(auth_router)
+
 app.include_router(dataset_router)
+
 app.include_router(ai_router)
+
+# ==========================================================
+# HEALTH CHECK
+# ==========================================================
+
+@app.get("/health")
+def health_check():
+
+    return {
+        "status": "healthy",
+        "service": "NeuroSync",
+        "version": "2.0.0"
+    }
+
+# ==========================================================
+# ROOT
+# ==========================================================
 
 @app.get("/")
 def root():
@@ -96,5 +161,5 @@ def root():
     return {
         "success": True,
         "message": "NeuroSync API Running",
-        "data": None,
+        "data": None
     }

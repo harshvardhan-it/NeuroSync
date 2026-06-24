@@ -5,11 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Groq(
-    api_key=os.getenv(
-        "GROQ_API_KEY"
+client = None
+from backend.config.settings import settings
+if settings.GROQ_API_KEY:
+
+    client = Groq(
+        api_key=settings.GROQ_API_KEY
     )
-)
 
 MODEL = "llama-3.3-70b-versatile"
 
@@ -138,10 +140,18 @@ EXECUTIVE ACTION PLAN
 
 
 def ask_ai(
+        
     message: str,
     analysis: dict = None,
     conversation_history: str = ""
 ) -> str:
+    
+    if not client:
+
+        return (
+            "NeuroSync Executive AI is currently unavailable. "
+            "Configure GROQ_API_KEY to enable AI features."
+        )
 
     executive_context = (
         build_executive_context(
