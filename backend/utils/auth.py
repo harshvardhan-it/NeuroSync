@@ -4,12 +4,15 @@ import bcrypt
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+from backend.config.settings import settings
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(
-    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+SECRET_KEY = settings.SECRET_KEY
+
+ALGORITHM = settings.ALGORITHM
+from backend.config.settings import settings
+
+ACCESS_TOKEN_EXPIRE_MINUTES = (
+    settings.ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
 def hash_password(password: str) -> str:
