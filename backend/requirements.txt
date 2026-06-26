@@ -13,7 +13,7 @@ python-jose==3.5.0
 bcrypt==5.0.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.20
-
+email-validator
 groq==1.4.0
 
 pandas==3.0.3
