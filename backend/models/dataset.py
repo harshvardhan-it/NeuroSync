@@ -12,7 +12,7 @@ class Dataset(SQLModel, table=True):
         primary_key=True
     )
 
-    user_id: int
+    user_id: int = Field(foreign_key="user.id")
 
     filename: str
     file_type: str

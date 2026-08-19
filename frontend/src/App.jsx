@@ -104,31 +104,55 @@ return ( <AuthProvider> <BrowserRouter> <Routes>
 
       <Route
         path="/workspace"
-        element={<WorkspacePage />}
+        element={
+          <PrivateRoute>
+            <WorkspacePage />
+          </PrivateRoute>
+        }
       />
-
+ 
       <Route
         path="/dashboard"
-        element={<DashboardPage />}
+        element={
+          <PrivateRoute>
+            <DashboardPage />
+          </PrivateRoute>
+        }
       />
-
+ 
       <Route
         path="/insights"
-        element={<InsightsPage />}
+        element={
+          <PrivateRoute>
+            <InsightsPage />
+          </PrivateRoute>
+        }
       />
-
+ 
       <Route
         path="/anomalies"
-        element={<AnomaliesPage />}
+        element={
+          <PrivateRoute>
+            <AnomaliesPage />
+          </PrivateRoute>
+        }
       />
       <Route
         path="/forecasts"
-        element={<ForecastsPage />}
+        element={
+          <PrivateRoute>
+            <ForecastsPage />
+          </PrivateRoute>
+        }
       />
-
+ 
       <Route
         path="/risk"
-        element={<RiskPage />}
+        element={
+          <PrivateRoute>
+            <RiskPage />
+          </PrivateRoute>
+        }
       />
 
       <Route

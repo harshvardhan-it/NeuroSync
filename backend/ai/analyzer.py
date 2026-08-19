@@ -425,6 +425,15 @@ def analyze_dataframe(df):
     # STRATEGIC LEVERAGE INTELLIGENCE
     # ==========================================================
 
+    # Ensure scenario_simulations is defined before using it. In some
+    # pipeline orderings scenario_simulations may be computed later, so
+    # provide a safe default to avoid NameError / uninitialized use.
+    if "scenario_simulations" not in locals():
+        scenario_simulations = {
+            "status": "unavailable",
+            "results": []
+        }
+
     try:
 
         logger.info(
@@ -597,6 +606,11 @@ def analyze_dataframe(df):
 
         "forecast_engine":
             forecast_results,
+
+        # Backwards-compatible alias for frontend and other clients that
+        # expect a top-level `forecasts` key. Use forecasts array if
+        # present, otherwise expose the whole forecast_results object.
+        "forecasts": forecast_results.get("forecasts", forecast_results),
 
         "recommendations":
             recommendations,

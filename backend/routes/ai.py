@@ -8,7 +8,9 @@ from backend.ai.conversation_context import (
 )
 
 from backend.models.dataset import Dataset
+from backend.models.user import User
 from backend.utils.database import get_session
+from backend.utils.auth import get_current_user
 
 router = APIRouter(
     prefix="/ai",
@@ -24,7 +26,8 @@ class ChatRequest(BaseModel):
 @router.post("/chat")
 def chat(
     data: ChatRequest,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     dataset = session.get(
         Dataset,
@@ -35,6 +38,14 @@ def chat(
         raise HTTPException(
             status_code=404,
             detail="Dataset not found"
+        )
+
+    # Enforce dataset ownership: only the dataset owner may query AI on it
+    dataset_owner_id = getattr(dataset, "user_id", None)
+    if dataset_owner_id is not None and dataset_owner_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: dataset does not belong to current user"
         )
 
     analysis = (
