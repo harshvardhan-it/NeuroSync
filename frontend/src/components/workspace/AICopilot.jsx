@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 
 import {
   chatWithAI,
+  getChatHistory,
 } from "../../api/client";
 
 export default function AICopilot({
@@ -37,33 +38,30 @@ export default function AICopilot({
   }, [messages, loading]);
 
   useEffect(() => {
-    if (!datasetId) return;
+    let cancelled = false;
 
-    localStorage.setItem(
-      `chat_${datasetId}`,
-      JSON.stringify(messages)
-    );
-  }, [messages, datasetId]);
-
-  useEffect(() => {
-    if (!datasetId) return;
-
-    const savedChat =
-      localStorage.getItem(
-        `chat_${datasetId}`
-      );
-
-    if (savedChat) {
-      try {
-        setMessages(
-          JSON.parse(savedChat)
-        );
-      } catch (error) {
-        console.warn("Failed to restore local chat history.");
+    async function loadHistory() {
+      if (!datasetId) {
+        setMessages([]);
+        return;
       }
-    } else {
-      setMessages([]);
+
+      try {
+        const response = await getChatHistory(datasetId);
+        if (!cancelled) {
+          setMessages(response.data.data || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setMessages([]);
+        }
+      }
     }
+
+    loadHistory();
+    return () => {
+      cancelled = true;
+    };
   }, [datasetId]);
 
   async function sendMessage(
@@ -122,9 +120,7 @@ export default function AICopilot({
   function clearConversation() {
     setMessages([]);
 
-    localStorage.removeItem(
-      `chat_${datasetId}`
-    );
+    // Backend persistence is the source of truth.
   }
 
   const executiveActions = [
