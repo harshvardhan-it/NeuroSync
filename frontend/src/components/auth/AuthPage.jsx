@@ -435,6 +435,7 @@ function InputField({
   return (
     <div className="mb-5">
       <label
+        htmlFor={label.toLowerCase().replace(/\\s+/g, "-")}
         className="
           block
           mb-2
@@ -449,6 +450,8 @@ function InputField({
       </label>
 
       <input
+        id={label.toLowerCase().replace(/\\s+/g, "-")}
+        name={label.toLowerCase().replace(/\\s+/g, "-")}
         type={type}
         value={value}
         onChange={(e) =>
