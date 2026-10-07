@@ -1,84 +1,50 @@
 from collections import defaultdict
+from threading import Lock
 
 
 class ConversationContext:
+    """Bounded prototype conversation memory scoped by user and dataset."""
+
+    MAX_MESSAGES = 10
+    MAX_MESSAGE_CHARS = 4000
+    MAX_SESSIONS = 1000
 
     def __init__(self):
         self.sessions = defaultdict(list)
+        self._lock = Lock()
 
-    def add_message(
-        self,
-        dataset_id: int,
-        role: str,
-        content: str
-    ):
-        self.sessions[
-            dataset_id
-        ].append(
-            {
-                "role": role,
-                "content": content
-            }
-        )
+    def _key(self, user_id: int, dataset_id: int):
+        return user_id, dataset_id
 
-        # Keep last 10 messages
-        self.sessions[
-            dataset_id
-        ] = self.sessions[
-            dataset_id
-        ][-10:]
+    def add_message(self, user_id: int, dataset_id: int, role: str, content: str):
+        key = self._key(user_id, dataset_id)
+        safe_content = str(content)[: self.MAX_MESSAGE_CHARS]
 
-    def get_history(
-        self,
-        dataset_id: int
-    ):
-        return self.sessions.get(
-            dataset_id,
-            []
-        )
+        with self._lock:
+            self.sessions[key].append({"role": role, "content": safe_content})
+            self.sessions[key] = self.sessions[key][-self.MAX_MESSAGES :]
 
-    def clear_history(
-        self,
-        dataset_id: int
-    ):
-        if dataset_id in self.sessions:
-            del self.sessions[
-                dataset_id
-            ]
+            if len(self.sessions) > self.MAX_SESSIONS:
+                oldest = next(iter(self.sessions))
+                del self.sessions[oldest]
 
-    def build_context(
-        self,
-        dataset_id: int
-    ) -> str:
+    def get_history(self, user_id: int, dataset_id: int):
+        with self._lock:
+            return list(self.sessions.get(self._key(user_id, dataset_id), []))
 
-        history = self.get_history(
-            dataset_id
-        )
+    def clear_history(self, user_id: int, dataset_id: int):
+        with self._lock:
+            self.sessions.pop(self._key(user_id, dataset_id), None)
 
+    def build_context(self, user_id: int, dataset_id: int) -> str:
+        history = self.get_history(user_id, dataset_id)
         if not history:
             return ""
 
-        context = (
-            "\nPREVIOUS DISCUSSION\n\n"
+        return "\nPREVIOUS DISCUSSION\n\n" + "".join(
+            f"{'User' if item['role'] == 'user' else 'AI'}: {item['content']}\n\n"
+            for item in history
         )
 
-        for msg in history:
 
-            role = (
-                "User"
-                if msg["role"]
-                == "user"
-                else "AI"
-            )
-
-            context += (
-                f"{role}: "
-                f"{msg['content']}\n\n"
-            )
-
-        return context
-
-
-conversation_manager = (
-    ConversationContext()
-)
+conversation_manager = ConversationContext()
