@@ -3,11 +3,11 @@ export default function NeuralParticles() {
     { length: 24 },
     (_, i) => ({
       id: i,
-      left: Math.random() * 100,
-      top: Math.random() * 100,
-      size: Math.random() * 4 + 2,
-      duration: Math.random() * 12 + 8,
-      delay: Math.random() * 5,
+      left: ((i * 37) % 100),
+      top: ((i * 37) % 100),
+      size: (i % 3) + 2,
+      duration: (i % 5) + 8,
+      delay: (i % 4),
       color:
         i % 2 === 0
           ? "#E7B75F"
