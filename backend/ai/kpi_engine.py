@@ -40,19 +40,19 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
 
     revenue_col = _select_column(
         numeric,
-        ["revenue", "total_revenue", "net_revenue"],
+        ["total_revenue", "net_revenue", "revenue"],
         ["total_revenue", "net_revenue", "revenue"],
         ["sales"],
     )
     expense_col = _select_column(
         numeric,
-        ["expenses", "total_expenses", "expense", "total_cost"],
+        ["total_expenses", "expenses", "expense", "total_cost"],
         ["total_expenses", "expenses", "expense", "cost"],
         ["operating_cost", "cost"],
     )
     profit_col = _select_column(
         numeric,
-        ["profit", "net_profit", "gross_profit"],
+        ["net_profit", "gross_profit", "profit"],
         ["net_profit", "gross_profit", "profit"],
         [],
     )
