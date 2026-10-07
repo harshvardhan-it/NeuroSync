@@ -10,8 +10,8 @@ class Dataset(SQLModel, table=True):
 
     user_id: int = Field(index=True)
 
+    # Stored object key, never the raw client filename.
     filename: str
-    storage_key: str = Field(index=True)
     file_type: str
 
     rows: int = 0
