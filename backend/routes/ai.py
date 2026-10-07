@@ -113,3 +113,34 @@ def chat(
         "message": "AI response generated.",
         "data": response,
     }
+
+
+@router.get("/history/{dataset_id}")
+def chat_history(
+    dataset_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    dataset = session.get(Dataset, dataset_id)
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found.")
+    if dataset.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied.")
+
+    messages = session.exec(
+        select(ChatMessage)
+        .where(
+            ChatMessage.user_id == current_user.id,
+            ChatMessage.dataset_id == dataset_id,
+        )
+        .order_by(ChatMessage.created_at.desc())
+        .limit(50)
+    ).all()
+
+    return {
+        "success": True,
+        "data": [
+            {"role": message.role, "content": message.content}
+            for message in reversed(messages)
+        ],
+    }
