@@ -30,6 +30,14 @@ class Settings:
         if origin.strip()
     ]
 
+    # Vercel generates a new preview hostname for each deployment.
+    # Keep the explicit production origins above, while allowing only
+    # NeuroSync's own Vercel preview deployments through a strict regex.
+    ALLOWED_ORIGIN_REGEX = os.getenv(
+        "ALLOWED_ORIGIN_REGEX",
+        r"^https://neuro-sync-m5r6-[a-z0-9-]+-harshvardhan-dubey\.vercel\.app$"
+    ).strip() or None
+
     def validate(self):
         if self.ACCESS_TOKEN_EXPIRE_MINUTES <= 0:
             raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES must be greater than 0.")
