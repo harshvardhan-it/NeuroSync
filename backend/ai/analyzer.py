@@ -1,627 +1,270 @@
+import re
 import logging
+import pandas as pd
+
 from backend.ai.kpi_engine import calculate_kpis
 from backend.ai.insight_engine import generate_kpi_insights
 from backend.ai.recommendation_engine import generate_recommendations
 from backend.ai.anomaly_engine import AnomalyEngine
 from backend.ai.risk_engine import RiskAssessmentEngine
-from backend.services.scenario_simulation_service import (
-    ScenarioSimulationService
-)
 from backend.services.validation_service import ValidationService
 from backend.services.decision_engine import DecisionEngine
-
-from backend.engines.forecast_engine import ForecastEngine
-
+from backend.services.scenario_simulation_service import ScenarioSimulationService
 from backend.services.root_cause_service import RootCauseService
-from backend.engines.correlation_engine import (
-    CorrelationEngine
-)
-from backend.engines.dependency_engine import (
-    DependencyEngine
-)
-from backend.engines.causal_engine import (
-    CausalEngine
-)
-from backend.engines.strategic_leverage_engine import (
-    StrategicLeverageEngine
-)
-from backend.engines.executive_optimization_engine import (
-    ExecutiveOptimizationEngine
-)
+from backend.engines.forecast_engine import ForecastEngine
+from backend.engines.correlation_engine import CorrelationEngine
+from backend.engines.dependency_engine import DependencyEngine
+from backend.engines.causal_engine import CausalEngine
+from backend.engines.strategic_leverage_engine import StrategicLeverageEngine
+from backend.engines.executive_optimization_engine import ExecutiveOptimizationEngine
 
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger("NeuroSync.Analyzer")
+
+
+METRIC_TERMS = {
+    "revenue", "sales", "profit", "net_profit", "gross_profit",
+    "cost", "expense", "expenses", "income", "amount", "quantity",
+    "units", "customer_count", "order_count"
+}
+DIMENSION_TERMS = {
+    "date", "time", "timestamp", "region", "country", "city",
+    "product", "category", "customer", "customer_id",
+    "order_id", "transaction_id", "invoice_id"
+}
+
+
+def _normalize_column(name):
+    return re.sub(r"[^a-z0-9]+", "_", str(name).strip().lower()).strip("_")
+
+
+def _is_identifier(name):
+    normalized = _normalize_column(name)
+    return normalized in {"id", "identifier"} or normalized.endswith("_id")
+
 
 def detect_business_columns(df):
-
     business_metrics = []
     dimensions = []
-
-    metric_keywords = [
-        "revenue",
-        "sales",
-        "profit",
-        "cost",
-        "income",
-        "expense",
-        "quantity",
-        "amount",
-        "units",
-        "customer",
-        "customers",
-        "customer_count",
-        "orders",
-        "order_count"
-    ]
-
-    dimension_keywords = [
-        "date",
-        "time",
-        "region",
-        "country",
-        "city",
-        "customer",
-        "product",
-        "category"
-    ]
+    identifiers = []
 
     for column in df.columns:
+        normalized = _normalize_column(column)
+        if _is_identifier(column):
+            identifiers.append(column)
 
-        column_lower = column.lower()
+        is_numeric = pd.api.types.is_numeric_dtype(df[column])
+        metric_match = normalized in METRIC_TERMS or any(
+            normalized.startswith(term + "_") or normalized.endswith("_" + term)
+            for term in METRIC_TERMS
+        )
+        dimension_match = normalized in DIMENSION_TERMS or any(
+            normalized.startswith(term + "_") or normalized.endswith("_" + term)
+            for term in DIMENSION_TERMS
+        )
 
-        if any(
-            keyword in column_lower
-            for keyword in metric_keywords
-        ):
+        # Numeric IDs are never promoted to business metrics.
+        if is_numeric and metric_match and not _is_identifier(column):
             business_metrics.append(column)
 
-        if any(
-            keyword in column_lower
-            for keyword in dimension_keywords
-        ):
+        if dimension_match:
             dimensions.append(column)
 
     return {
-        "business_metrics": business_metrics,
-        "dimensions": dimensions
+        "business_metrics": list(dict.fromkeys(business_metrics)),
+        "dimensions": list(dict.fromkeys(dimensions)),
+        "identifier_columns": list(dict.fromkeys(identifiers)),
     }
 
 
-def generate_executive_summary(
-    total_rows,
-    business_info,
-    quality_score,
-    anomalies_count
-):
+def _failed_engine(message):
+    return {"status": "failed", "error": message, "confidence_score": 0}
 
-    summary = []
 
-    summary.append(
-        f"Dataset contains {total_rows} records."
-    )
-
+def generate_executive_summary(total_rows, business_info, quality_score, anomalies_count):
+    summary = [f"Dataset contains {total_rows} records."]
     if business_info["business_metrics"]:
         summary.append(
-            f"Business metrics detected: {', '.join(business_info['business_metrics'])}."
+            "Business metrics detected: "
+            + ", ".join(map(str, business_info["business_metrics"]))
+            + "."
         )
-
     if business_info["dimensions"]:
         summary.append(
-            f"Business dimensions detected: {', '.join(business_info['dimensions'])}."
+            "Business dimensions detected: "
+            + ", ".join(map(str, business_info["dimensions"]))
+            + "."
         )
-
-    summary.append(
-        f"Data Quality Score: {quality_score}/100."
-    )
-
-    summary.append(
-        f"Detected {anomalies_count} business anomalies."
-    )
-
+    summary.append(f"Data Quality Score: {quality_score}/100.")
+    summary.append(f"Detected {anomalies_count} business anomalies.")
     return summary
 
 
 def analyze_dataframe(df):
+    if df is None or df.empty:
+        raise ValueError("Dataset is empty.")
 
-    total_rows = len(df)
+    total_rows = int(len(df))
+    total_columns = int(len(df.columns))
+    numeric_columns = list(df.select_dtypes(include=["number"]).columns)
 
-    total_columns = len(df.columns)
-
-    numeric_columns = list(
-        df.select_dtypes(
-            include=["number"]
-        ).columns
-    )
-
-    # ==========================================================
-    # VALIDATION SERVICE
-    # ==========================================================
-
-    validation = (
-        ValidationService.validate_dataset(df)
-    )
-
-    missing_values = (
-        validation["missing_values"]
-    )
-
-    duplicate_rows = (
-        validation["duplicate_rows"]
-    )
-
-    quality_score = (
-        validation["quality_score"]
-    )
-
-    # ==========================================================
-    # BUSINESS UNDERSTANDING
-    # ==========================================================
-
+    validation = ValidationService.validate_dataset(df)
     business_info = detect_business_columns(df)
 
-    # ==========================================================
-    # FORECAST ENGINE
-    # ==========================================================
-
-    forecast_engine = ForecastEngine()
-
-    forecast_results = (
-        forecast_engine.generate_forecasts(
-            df,
-            business_info["business_metrics"]
-        )
-    )
-
-    # ==========================================================
-    # KPI ENGINE
-    # ==========================================================
-
+    # 1. KPI
     kpis = calculate_kpis(df)
 
-    # ==========================================================
-    # INSIGHT ENGINE
-    # ==========================================================
-
-    kpi_insights = generate_kpi_insights(
-        kpis
-    )
-
+    # 2. Insights
     insights = []
-
-    if missing_values == 0:
-
-        insights.append(
-            "No missing values detected."
-        )
-
+    if validation["missing_values"] == 0:
+        insights.append("No missing values detected.")
     else:
+        insights.append(f"{validation['missing_values']} missing values detected.")
 
-        insights.append(
-            f"{missing_values} missing values detected."
-        )
-
-    if duplicate_rows == 0:
-
-        insights.append(
-            "No duplicate rows detected."
-        )
-
+    if validation["duplicate_rows"] == 0:
+        insights.append("No duplicate rows detected.")
     else:
+        insights.append(f"{validation['duplicate_rows']} duplicate rows detected.")
+    insights.extend(generate_kpi_insights(kpis))
 
-        insights.append(
-            f"{duplicate_rows} duplicate rows detected."
-        )
+    # 3. Anomalies
+    anomalies = AnomalyEngine().detect_anomalies(df)
 
-    insights.extend(
-        kpi_insights
+    # 4. Forecast
+    forecast_result = ForecastEngine().generate_forecasts(
+        df,
+        business_info["business_metrics"],
+    )
+    forecasts = forecast_result.get("forecasts", [])
+
+    # 5. Risk
+    risk_assessment = RiskAssessmentEngine().generate_risk_assessment(
+        df, kpis, anomalies, forecast_result
     )
 
-    # ==========================================================
-    # ANOMALY ENGINE
-    # ==========================================================
-
-    anomaly_engine = AnomalyEngine()
-
-    anomalies = (
-        anomaly_engine.detect_anomalies(df)
+    # 6. Recommendations, grounded in actual KPI/forecast/anomaly evidence
+    recommendations = generate_recommendations(
+        business_info,
+        anomalies=anomalies,
+        forecasts=forecasts,
+        kpis=kpis,
     )
 
-    # ==========================================================
-    # RISK ENGINE
-    # ==========================================================
+    # 7. Decisions
+    decisions = DecisionEngine().generate_decisions(
+        kpis,
+        insights,
+        recommendations,
+        anomalies,
+        forecast_result,
+        risk_assessment,
+    )
 
-    risk_engine = RiskAssessmentEngine()
+    # 8. Root cause
+    try:
+        root_cause_analysis = RootCauseService.generate(df)
+    except Exception:
+        logger.exception("Root Cause Analysis failed")
+        root_cause_analysis = _failed_engine("Root Cause Analysis unavailable.")
 
-    risk_assessment = (
-        risk_engine.generate_risk_assessment(
+    # 9. Correlation
+    try:
+        correlation_analysis = CorrelationEngine.analyze(df)
+    except Exception:
+        logger.exception("Correlation Intelligence failed")
+        correlation_analysis = _failed_engine("Correlation analysis unavailable.")
+
+    # 10. Dependency
+    try:
+        dependency_analysis = DependencyEngine.analyze(correlation_analysis)
+    except Exception:
+        logger.exception("Dependency Intelligence failed")
+        dependency_analysis = _failed_engine("Dependency analysis unavailable.")
+
+    # 11. Causal
+    try:
+        causal_analysis = CausalEngine.analyze(
+            correlation_analysis,
+            dependency_analysis,
+        )
+    except Exception:
+        logger.exception("Causal Intelligence failed")
+        causal_analysis = _failed_engine("Causal analysis unavailable.")
+
+    # 12. Scenario simulation MUST precede consumers of its output.
+    try:
+        scenario_simulations = ScenarioSimulationService.compare(
             df,
-            kpis,
-            anomalies,
-            forecast_results
+            [
+                {"scenario_type": "revenue_growth", "percentage_change": 15},
+                {"scenario_type": "expense_reduction", "percentage_change": 10},
+                {"scenario_type": "customer_decline", "percentage_change": 20},
+            ],
         )
-    )
+    except Exception:
+        logger.exception("Scenario simulation failed")
+        scenario_simulations = _failed_engine("Scenario simulation unavailable.")
 
-    # ==========================================================
-    # RECOMMENDATION ENGINE
-    # ==========================================================
-
-    recommendations = (
-        generate_recommendations(
-            business_info,
-            anomalies,
-            forecast_results.get(
-                "forecasts",
-                []
-            )
-        )
-    )
-
-    # ==========================================================
-    # DECISION ENGINE
-    # ==========================================================
-
-    decision_engine = DecisionEngine()
-
-    decisions = (
-        decision_engine.generate_decisions(
-            kpis,
-            insights,
-            recommendations,
-            anomalies,
-            forecast_results,
-            risk_assessment
-        )
-    )
-
-    # ==========================================================
-    # ROOT CAUSE ANALYSIS
-    # ==========================================================
-
+    # 13. Strategic leverage consumes completed scenario simulation.
     try:
-
-        logger.info(
-            "Starting Root Cause Analysis..."
+        strategic_leverage_analysis = StrategicLeverageEngine.analyze(
+            causal_analysis,
+            dependency_analysis,
+            scenario_simulations,
+        )
+    except Exception:
+        logger.exception("Strategic Leverage Intelligence failed")
+        strategic_leverage_analysis = _failed_engine(
+            "Strategic leverage analysis unavailable."
         )
 
-        root_cause_analysis = (
-            RootCauseService.generate(df)
-        )
-
-        logger.info(
-            "Root Cause Analysis completed."
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Root Cause Analysis failed: %s",
-            str(e)
-        )
-
-        root_cause_analysis = {
-            "status": "failed",
-            "root_causes": [],
-            "executive_diagnosis":
-                "Root Cause Analysis unavailable.",
-            "confidence_score": 0
-        }
-
-
-    # ==========================================================
-    # CORRELATION INTELLIGENCE
-    # ==========================================================
-
+    # 14. Executive optimization consumes completed strategic + scenario analysis.
     try:
-
-        logger.info(
-            "Starting Correlation Intelligence..."
+        executive_optimization = ExecutiveOptimizationEngine.analyze(
+            strategic_leverage_analysis,
+            scenario_simulations,
+            risk_assessment,
+        )
+    except Exception:
+        logger.exception("Executive Optimization failed")
+        executive_optimization = _failed_engine(
+            "Executive optimization unavailable."
         )
 
-        correlation_analysis = (
-            CorrelationEngine.analyze(df)
-        )
-
-        logger.info(
-            "Correlation Intelligence completed."
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Correlation Intelligence failed: %s",
-            str(e)
-        )
-
-        correlation_analysis = {
-            "status": "failed",
-            "correlation_matrix": {},
-            "top_positive_drivers": [],
-            "top_negative_drivers": [],
-            "revenue_drivers": [],
-            "profit_drivers": [],
-            "customer_drivers": [],
-            "business_impact_ranking": [],
-            "executive_interpretation":
-                "Correlation analysis unavailable.",
-            "confidence_score": 0
-        }
-
-    # ==========================================================
-    # DEPENDENCY INTELLIGENCE
-    # ==========================================================
-
-    try:
-
-        logger.info(
-            "Starting Dependency Intelligence..."
-        )
-
-        dependency_analysis = (
-            DependencyEngine.analyze(
-                correlation_analysis
-            )
-        )
-
-        logger.info(
-            "Dependency Intelligence completed."
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Dependency Intelligence failed: %s",
-            str(e)
-        )
-
-        dependency_analysis = {
-            "status": "error",
-            "critical_dependencies": [],
-            "dependency_graph": {},
-            "single_points_of_failure": [],
-            "dependency_rankings": [],
-            "executive_summary":
-                "Dependency analysis unavailable.",
-            "confidence_score": 0
-        }
-
-    # ==========================================================
-    # CAUSAL INTELLIGENCE
-    # ==========================================================
-
-    try:
-
-        logger.info(
-            "Starting Causal Intelligence..."
-        )
-
-        causal_analysis = (
-            CausalEngine.analyze(
-                correlation_analysis,
-                dependency_analysis
-            )
-        )
-
-        logger.info(
-            "Causal Intelligence completed."
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Causal Intelligence failed: %s",
-            str(e)
-        )
-
-        causal_analysis = {
-            "status": "error",
-            "causal_chains": [],
-            "root_drivers": [],
-            "business_levers": [],
-            "executive_explanation":
-                "Causal analysis unavailable.",
-            "confidence_score": 0
-        }
-
-    # ==========================================================
-    # STRATEGIC LEVERAGE INTELLIGENCE
-    # ==========================================================
-
-    try:
-
-        logger.info(
-            "Starting Strategic Leverage Intelligence..."
-        )
-
-        strategic_leverage_analysis = (
-            StrategicLeverageEngine.analyze(
-                causal_analysis,
-                dependency_analysis,
-                scenario_simulations
-            )
-        )
-
-        logger.info(
-            "Strategic Leverage Intelligence completed."
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Strategic Leverage Intelligence failed: %s",
-            str(e)
-        )
-
-        strategic_leverage_analysis = {
-            "status": "error",
-            "strategic_levers": [],
-            "highest_roi_actions": [],
-            "executive_priorities": [],
-            "executive_explanation":
-                "Strategic leverage analysis unavailable.",
-            "confidence_score": 0
-        }
-
-    # ==========================================================
-    # EXECUTIVE OPTIMIZATION
-    # ==========================================================
-
-    try:
-
-        logger.info(
-            "Starting Executive Optimization..."
-        )
-
-        executive_optimization = (
-            ExecutiveOptimizationEngine.analyze(
-                strategic_leverage_analysis,
-                scenario_simulations,
-                risk_assessment
-            )
-        )
-
-        logger.info(
-            "Executive Optimization completed."
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Executive Optimization failed: %s",
-            str(e)
-        )
-
-        executive_optimization = {
-            "status": "error",
-            "optimal_action_plan": [],
-            "executive_priorities": [],
-            "resource_allocation": [],
-            "expected_business_outcomes": [],
-            "executive_explanation":
-                "Executive optimization unavailable.",
-            "confidence_score": 0
-        }
-
-    # ==========================================================
-    # SCENARIO SIMULATION
-    # ==========================================================
-
-    try:
-
-        scenario_simulations = (
-            ScenarioSimulationService.compare(
-                df,
-                [
-                    {
-                        "scenario_type":
-                        "revenue_growth",
-
-                        "percentage_change":
-                        15
-                    },
-                    {
-                        "scenario_type":
-                        "expense_reduction",
-
-                        "percentage_change":
-                        10
-                    },
-                    {
-                        "scenario_type":
-                        "customer_decline",
-
-                        "percentage_change":
-                        20
-                    }
-                ]
-            )
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Scenario simulation failed: %s",
-            str(e)
-        )
-
-        scenario_simulations = {
-            "status": "failed",
-            "results": []
-        }
-
-    # ==========================================================
-    # EXECUTIVE SUMMARY
-    # ==========================================================
-
-    executive_summary = (
-        generate_executive_summary(
-            total_rows,
-            business_info,
-            quality_score,
-            len(anomalies)
-        )
-    )
-
-    # ==========================================================
-    # FINAL RESPONSE
-    # ==========================================================
+    business_status = decisions.get("business_status", "Unknown")
+    health_score = decisions.get("health_score", 0)
+    executive_action_plan = decisions.get("executive_action_plan", [])
 
     return {
         "dataset_summary": {
             "rows": total_rows,
             "columns": total_columns,
-            "numeric_columns": numeric_columns
+            "numeric_columns": numeric_columns,
         },
-
-        "business_understanding":
+        "business_understanding": business_info,
+        "business_status": business_status,
+        "health_score": health_score,
+        "executive_summary": generate_executive_summary(
+            total_rows,
             business_info,
-
-        "executive_summary":
-            executive_summary,
-
-        "quality_score":
-            quality_score,
-
-        "validation":
-            validation,
-
-        "insights":
-            insights,
-
-        "kpis":
-            kpis,
-
-        "anomalies":
-            anomalies,
-
-        "risk_assessment":
-            risk_assessment,
-
-        "forecast_engine":
-            forecast_results,
-
-        "recommendations":
-            recommendations,
-
-        "decisions":
-            decisions,
-
-        "root_cause_analysis":
-            root_cause_analysis,
-
-        "correlation_analysis":
-            correlation_analysis, 
-
-        "dependency_analysis":
-            dependency_analysis,
-       
-        "causal_analysis":
-            causal_analysis,
-
-        "strategic_leverage_analysis":
-            strategic_leverage_analysis,
-    
-        "executive_optimization":
-            executive_optimization,
-
-        "scenario_simulations":
-            scenario_simulations
+            validation["quality_score"],
+            len(anomalies),
+        ),
+        "quality_score": validation["quality_score"],
+        "validation": validation,
+        "kpis": kpis,
+        "insights": insights,
+        "anomalies": anomalies,
+        "risk_assessment": risk_assessment,
+        "forecasts": forecast_result,
+        "recommendations": recommendations,
+        "decisions": decisions,
+        "root_cause_analysis": root_cause_analysis,
+        "correlation_analysis": correlation_analysis,
+        "dependency_analysis": dependency_analysis,
+        "causal_analysis": causal_analysis,
+        "scenario_simulations": scenario_simulations,
+        "strategic_leverage_analysis": strategic_leverage_analysis,
+        "executive_optimization": executive_optimization,
+        "executive_action_plan": executive_action_plan,
     }
