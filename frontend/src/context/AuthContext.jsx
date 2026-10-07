@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import {
   createContext,
   useContext,
@@ -21,7 +23,7 @@ export function AuthProvider({
     useState(null);
 
   const [loading, setLoading] =
-    useState(true);
+    useState(() => Boolean(localStorage.getItem("neurosync_token")));
 
   useEffect(() => {
     const token =
@@ -29,10 +31,7 @@ export function AuthProvider({
         "neurosync_token"
       );
 
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
 
     getCurrentUser()
       .then((res) => {
