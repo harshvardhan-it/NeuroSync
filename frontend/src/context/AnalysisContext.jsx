@@ -1,31 +1,21 @@
-/* eslint-disable react-refresh/only-export-components */\n\nimport { createContext, useState } from "react";
+/* eslint-disable react-refresh/only-export-components */
 
-export const AnalysisContext =
-  createContext();
+import { createContext, useState } from "react";
 
-export const AnalysisProvider = ({
-  children,
-}) => {
+export const AnalysisContext = createContext();
 
-  const [datasetId, setDatasetId] =
-    useState(null);
-
-  const [analysis, setAnalysis] =
-    useState(null);
-
-  const [executiveSummary,
-    setExecutiveSummary] =
-    useState(null);
+export const AnalysisProvider = ({ children }) => {
+  const [datasetId, setDatasetId] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
+  const [executiveSummary, setExecutiveSummary] = useState(null);
 
   return (
     <AnalysisContext.Provider
       value={{
         datasetId,
         setDatasetId,
-
         analysis,
         setAnalysis,
-
         executiveSummary,
         setExecutiveSummary,
       }}
