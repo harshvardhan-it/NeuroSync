@@ -60,4 +60,7 @@ export const chatWithAI = (message, datasetId) =>
 export const getChatHistory = (datasetId) =>
   api.get(`/ai/history/${datasetId}`);
 
+export const clearChatHistory = (datasetId) =>
+  api.delete(`/ai/history/${datasetId}`);
+
 export default api;
