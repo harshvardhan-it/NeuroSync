@@ -8,6 +8,8 @@ import ReactMarkdown from "react-markdown";
 
 import {
   chatWithAI,
+  clearChatHistory,
+  getChatHistory,
 } from "../../api/client";
 
 export default function AICopilot({
@@ -16,11 +18,7 @@ export default function AICopilot({
   const meta =
     datasetMeta || {};
 
-  const datasetId = Number(
-    localStorage.getItem(
-      "dataset_id"
-    )
-  );
+  const datasetId = Number(meta.id || localStorage.getItem("dataset_id") || 0);
 
   const [messages, setMessages] =
     useState([]);
@@ -41,36 +39,30 @@ export default function AICopilot({
   }, [messages, loading]);
 
   useEffect(() => {
-    if (!datasetId) return;
+    let cancelled = false;
 
-    localStorage.setItem(
-      `chat_${datasetId}`,
-      JSON.stringify(messages)
-    );
-  }, [messages, datasetId]);
-
-  useEffect(() => {
-    if (!datasetId) return;
-
-    const savedChat =
-      localStorage.getItem(
-        `chat_${datasetId}`
-      );
-
-    if (savedChat) {
-      try {
-        setMessages(
-          JSON.parse(savedChat)
-        );
-      } catch (error) {
-        console.error(
-          "Failed to restore chat",
-          error
-        );
+    async function loadHistory() {
+      if (!datasetId) {
+        setMessages([]);
+        return;
       }
-    } else {
-      setMessages([]);
+
+      try {
+        const response = await getChatHistory(datasetId);
+        if (!cancelled) {
+          setMessages(response.data.data || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setMessages([]);
+        }
+      }
     }
+
+    loadHistory();
+    return () => {
+      cancelled = true;
+    };
   }, [datasetId]);
 
   async function sendMessage(
@@ -110,27 +102,31 @@ export default function AICopilot({
         },
       ]);
     } catch (error) {
-      console.error(error);
-
+      const message =
+        error.response?.data?.error?.message ||
+        error.response?.data?.error ||
+        "⚠️ AI service unavailable. Please try again.";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content:
-            "⚠️ AI service unavailable.",
+          content: typeof message === "string" ? message : "⚠️ AI service unavailable.",
         },
       ]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
-  function clearConversation() {
-    setMessages([]);
+  async function clearConversation() {
+    if (!datasetId) return;
 
-    localStorage.removeItem(
-      `chat_${datasetId}`
-    );
+    try {
+      await clearChatHistory(datasetId);
+      setMessages([]);
+    } catch {
+      // Keep the existing conversation visible if deletion fails.
+    }
   }
 
   const executiveActions = [

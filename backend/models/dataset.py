@@ -1,19 +1,16 @@
-from sqlmodel import SQLModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import Column, JSON
+from sqlmodel import Field, SQLModel
 
 
 class Dataset(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
 
-    id: Optional[int] = Field(
-        default=None,
-        primary_key=True
-    )
+    user_id: int = Field(index=True)
 
-    user_id: int
-
+    # Stored object key, never the raw client filename.
     filename: str
     file_type: str
 
@@ -24,9 +21,9 @@ class Dataset(SQLModel, table=True):
 
     analysis_result: Optional[dict] = Field(
         default=None,
-        sa_column=Column(JSON)
+        sa_column=Column(JSON),
     )
 
     uploaded_at: datetime = Field(
-        default_factory=datetime.utcnow
+        default_factory=lambda: datetime.now(timezone.utc)
     )

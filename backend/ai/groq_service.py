@@ -498,8 +498,10 @@ Think strategically.
             .content
         )
 
-    except Exception as e:
-
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("Groq request failed")
         return (
-            f"Groq Error: {str(e)}"
+            "NeuroSync Executive AI is temporarily unavailable. "
+            "Please try again in a moment."
         )

@@ -150,7 +150,7 @@ export default function ExecutiveSummary({
           </p>
         </div>
 
-        {/* RCA Confidence */}
+        {/* Evidence Strength */}
 
         <div
           className="

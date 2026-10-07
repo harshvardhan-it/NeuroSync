@@ -42,26 +42,6 @@ export default function WorkspaceChat({
 
   const response = analysis;
 
-  console.log(
-    "RISK ASSESSMENT",
-    response.risk_assessment
-  );
-
-  console.log(
-    "FORECAST ENGINE",
-    response.forecast_engine
-  );
-
-  console.log(
-    "DECISIONS",
-    response.decisions
-  );
-
-  console.log(
-    "RECOMMENDATIONS",
-    response.recommendations
-  );
-
   return (
     <div className="w-full max-w-4xl mx-auto mt-14">
 
