@@ -57,4 +57,7 @@ export const chatWithAI = (message, datasetId) =>
     dataset_id: datasetId,
   });
 
+export const getChatHistory = (datasetId) =>
+  api.get(`/ai/history/${datasetId}`);
+
 export default api;
