@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 
 import {
   chatWithAI,
+  clearChatHistory,
   getChatHistory,
 } from "../../api/client";
 
@@ -117,10 +118,15 @@ export default function AICopilot({
     }
   }
 
-  function clearConversation() {
-    setMessages([]);
+  async function clearConversation() {
+    if (!datasetId) return;
 
-    // Backend persistence is the source of truth.
+    try {
+      await clearChatHistory(datasetId);
+      setMessages([]);
+    } catch {
+      // Keep the existing conversation visible if deletion fails.
+    }
   }
 
   const executiveActions = [
