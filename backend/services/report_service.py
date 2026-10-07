@@ -181,7 +181,7 @@ class ReportService:
 
             "forecasts":
                 analysis.get(
-                    "forecast_engine",
+                    "forecasts",
                     {}
                 ),
 

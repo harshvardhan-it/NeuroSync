@@ -10,11 +10,10 @@ export default function NeuroInput({
   setLoading,
   setDatasetMeta,
 }) {
-  const [value, setValue] =
-    useState("");
-
   const [file, setFile] =
     useState(null);
+
+  const [error, setError] = useState("");
 
   const handleUpload = async () => {
     console.log(
@@ -22,11 +21,16 @@ export default function NeuroInput({
     );
 
     if (!file) {
-      console.log(
-        "NO FILE"
-      );
+      setError("Please select a CSV or XLSX file.");
       return;
     }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File exceeds the 10 MB limit.");
+      return;
+    }
+
+    setError("");
 
     console.log(
       "FILE FOUND",
@@ -78,6 +82,11 @@ export default function NeuroInput({
         JSON.stringify(meta)
       );
 
+      localStorage.setItem(
+        "neurosync_analysis",
+        JSON.stringify(response.data.data.analysis)
+      );
+
       /* IMPORTANT */
       setDatasetMeta(meta);
 
@@ -111,6 +120,17 @@ export default function NeuroInput({
         "UPLOAD FAILED",
         error
       );
+
+      const status = error?.response?.status;
+      const message =
+        status === 401
+          ? "Your session has expired. Please log in again."
+          : status === 403
+            ? "You are not authorized to upload this dataset."
+            : status === 400
+              ? error?.response?.data?.error || "Invalid dataset file."
+              : "Analysis failed. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -244,6 +264,10 @@ export default function NeuroInput({
               />
             </button>
           </div>
+
+          {error && (
+            <p className="mt-3 text-sm text-red-300" role="alert">{error}</p>
+          )}
         </div>
       </div>
     </div>
