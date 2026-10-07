@@ -14,7 +14,7 @@ class ExecutiveSummaryService:
         )
 
         forecast = analysis.get(
-            "forecast_engine",
+            "forecasts",
             {}
         )
 
