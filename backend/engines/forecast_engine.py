@@ -1,423 +1,191 @@
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 
 
 class ForecastEngine:
-    """
-    NeuroSync Forecast Engine V1.1
-
-    Purpose:
-    Predict future business metrics using historical trends.
-    """
-
     def __init__(self):
+        self.date_column_candidates = {
+            "date", "order_date", "transaction_date", "invoice_date",
+            "timestamp", "month", "year", "time"
+        }
 
-        self.date_column_candidates = [
-            "Date",
-            "date",
-            "DATE",
-            "Order_Date",
-            "Transaction_Date",
-            "Invoice_Date",
-            "Timestamp",
-            "timestamp",
-            "Month",
-            "month",
-            "Year",
-            "year"
-        ]
-
-    # ==========================================================
-    # PUBLIC METHOD
-    # ==========================================================
-
-    def generate_forecasts(
-        self,
-        df,
-        business_metrics
-    ):
-
-        try:
-
-            if df is None or df.empty:
-
-                return {
-                    "forecast_summary": {
-                        "metrics_forecasted": 0
-                    },
-                    "forecasts": [],
-                    "forecast_insights": [],
-                    "status": "No data available"
-                }
-
-            working_df = df.copy()
-
-            date_col = self._find_date_column(
-                working_df
-            )
-
-            working_df = self._prepare_dataset(
-                working_df,
-                date_col
-            )
-
-            forecasts = []
-            forecast_insights = []
-
-            for metric in business_metrics:
-
-                if metric not in working_df.columns:
-                    continue
-
-                if not pd.api.types.is_numeric_dtype(
-                    working_df[metric]
-                ):
-                    continue
-
-                forecast = self._forecast_metric(
-                    working_df,
-                    metric
-                )
-
-                if forecast:
-
-                    forecasts.append(
-                        forecast
-                    )
-
-                    forecast_insights.append(
-                        self._generate_insight(
-                            forecast
-                        )
-                    )
-
+    def generate_forecasts(self, df, business_metrics):
+        if df is None or df.empty:
             return {
-                "forecast_summary": {
-                    "metrics_forecasted": len(
-                        forecasts
-                    ),
-                    "date_column_used": (
-                        date_col
-                        if date_col
-                        else "Row Index"
-                    )
-                },
-                "forecasts": forecasts,
-                "forecast_insights": forecast_insights,
-                "status": "success"
+                "forecast_summary": {"metrics_forecasted": 0},
+                "forecasts": [],
+                "forecast_insights": [],
+                "status": "no_data",
             }
 
-        except Exception as e:
+        try:
+            working = df.copy()
+            date_col = self._find_date_column(working)
+            period = "row-index"
+
+            if date_col:
+                parsed = pd.to_datetime(working[date_col], errors="coerce")
+                if parsed.notna().sum() >= 2:
+                    working = working.assign(_date=parsed).dropna(subset=["_date"]).sort_values("_date")
+                    period = self._infer_frequency(working["_date"])
+
+            forecasts = []
+            insights = []
+
+            for metric in business_metrics:
+                if metric not in working.columns or not pd.api.types.is_numeric_dtype(working[metric]):
+                    continue
+                result = self._forecast_metric(working, metric, date_col, period)
+                if result:
+                    forecasts.append(result)
+                    insights.append(self._generate_insight(result))
 
             return {
                 "forecast_summary": {
-                    "metrics_forecasted": 0
+                    "metrics_forecasted": len(forecasts),
+                    "date_column_used": date_col or "Row Index",
+                    "period": period,
                 },
+                "forecasts": forecasts,
+                "forecast_insights": insights,
+                "status": "success",
+            }
+        except Exception:
+            return {
+                "forecast_summary": {"metrics_forecasted": 0},
                 "forecasts": [],
                 "forecast_insights": [],
                 "status": "failed",
-                "error": str(e)
+                "warning": "Forecast engine failed safely; inspect server logs.",
             }
 
-    # ==========================================================
-    # DATE DETECTION
-    # ==========================================================
-
-    def _find_date_column(
-        self,
-        df
-    ):
-
+    def _find_date_column(self, df):
         for col in df.columns:
-
-            if col in self.date_column_candidates:
+            normalized = str(col).strip().lower().replace(" ", "_")
+            if normalized in self.date_column_candidates or "date" in normalized or "timestamp" in normalized:
                 return col
-
-            if "date" in str(col).lower():
-                return col
-
-            if "time" in str(col).lower():
-                return col
-
         return None
 
-    # ==========================================================
-    # DATA PREPARATION
-    # ==========================================================
+    def _infer_frequency(self, dates):
+        delta_days = dates.sort_values().diff().dropna().dt.total_seconds().div(86400)
+        if delta_days.empty:
+            return "unknown"
+        median = float(delta_days.median())
+        if median >= 27:
+            return "monthly"
+        if median >= 6:
+            return "weekly"
+        if median >= 1:
+            return "daily"
+        return "sub-daily"
 
-    def _prepare_dataset(
-        self,
-        df,
-        date_col
-    ):
-
-        working_df = df.copy()
-
+    def _forecast_metric(self, df, metric, date_col, period):
+        values = pd.to_numeric(df[metric], errors="coerce").replace([np.inf, -np.inf], np.nan)
         if date_col:
-
-            try:
-
-                working_df[date_col] = pd.to_datetime(
-                    working_df[date_col],
-                    errors="coerce"
-                )
-
-                working_df = working_df.sort_values(
-                    by=date_col
-                )
-
-            except Exception:
-                pass
-
-        working_df = working_df.reset_index(
-            drop=True
-        )
-
-        working_df["TimeIndex"] = np.arange(
-            len(working_df)
-        )
-
-        return working_df
-
-    # ==========================================================
-    # FORECAST METRIC
-    # ==========================================================
-
-    def _forecast_metric(
-        self,
-        df,
-        metric
-    ):
-
-        try:
-
-            metric_df = (
-                df[
-                    ["TimeIndex", metric]
-                ]
-                .copy()
-                .dropna()
-            )
-
-            if len(metric_df) < 5:
-
-                return {
-                    "metric": metric,
-                    "warning": (
-                        "Not enough historical data "
-                        "for forecasting."
-                    )
-                }
-
-            X = metric_df[
-                ["TimeIndex"]
-            ]
-
-            y = metric_df[
-                metric
-            ]
-
-            model = LinearRegression()
-
-            model.fit(
-                X,
-                y
-            )
-
-            predictions = model.predict(
-                X
-            )
-
-            score = r2_score(
-                y,
-                predictions
-            )
-
-            current_value = float(
-                y.iloc[-1]
-            )
-
-            if score < 0.10:
-
-                return {
-                    "metric": metric,
-                    "current_value": round(
-                        current_value,
-                        2
-                    ),
-                    "predicted_value": None,
-                    "change_percent": 0,
-                    "trend": "Unpredictable",
-                    "confidence": "Very Low",
-                    "r2_score": round(
-                        score,
-                        3
-                    ),
-                    "warning": (
-                        "Historical data does not "
-                        "contain a reliable trend "
-                        "for forecasting."
-                    )
-                }
-
-            future_index = np.array(
-                [[
-                    metric_df[
-                        "TimeIndex"
-                    ].max() + 1
-                ]]
-            )
-
-            predicted_value = float(
-                model.predict(
-                    future_index
-                )[0]
-            )
-
-            if current_value == 0:
-
-                change_percent = 0
-
+            temp = pd.DataFrame({"value": values, "date": pd.to_datetime(df[date_col], errors="coerce")}).dropna()
+            if period == "monthly":
+                temp["_period"] = temp["date"].dt.to_period("M")
+            elif period == "weekly":
+                temp["_period"] = temp["date"].dt.to_period("W")
+            elif period == "daily":
+                temp["_period"] = temp["date"].dt.to_period("D")
             else:
+                temp["_period"] = temp["date"]
+            grouped = temp.groupby("_period", sort=True)["value"].sum().reset_index()
+            y = grouped["value"].astype(float)
+        else:
+            y = values.dropna().astype(float).reset_index(drop=True)
 
-                change_percent = (
-                    (
-                        predicted_value
-                        - current_value
-                    )
-                    / abs(current_value)
-                ) * 100
-
-            trend = self._detect_trend(
-                change_percent
-            )
-
-            confidence = (
-                self._get_confidence(
-                    score
-                )
-            )
-
+        if len(y) < 5:
             return {
                 "metric": metric,
-                "current_value": round(
-                    current_value,
-                    2
-                ),
-                "predicted_value": round(
-                    predicted_value,
-                    2
-                ),
-                "change_percent": round(
-                    change_percent,
-                    2
-                ),
-                "trend": trend,
-                "confidence": confidence,
-                "r2_score": round(
-                    score,
-                    3
-                )
+                "status": "insufficient_data",
+                "warning": "Not enough historical data for forecasting.",
+                "data_points": int(len(y)),
+                "period": period,
             }
 
-        except Exception as e:
-
+        if np.isclose(float(y.std(ddof=0)), 0):
             return {
                 "metric": metric,
-                "error": str(e)
+                "status": "constant_series",
+                "current_value": round(float(y.iloc[-1]), 2),
+                "predicted_value": round(float(y.iloc[-1]), 2),
+                "change_percent": 0.0,
+                "trend": "Stable",
+                "model": "LinearRegression",
+                "data_points": int(len(y)),
+                "period": period,
+                "r2_score": 1.0,
+                "model_fit": "High",
+                "warning": "Series is constant; forecast is a persistence baseline.",
             }
 
-    # ==========================================================
-    # TREND DETECTION
-    # ==========================================================
+        x = np.arange(len(y), dtype=float).reshape(-1, 1)
+        model = LinearRegression().fit(x, y.to_numpy())
+        predictions = model.predict(x)
+        score = float(r2_score(y, predictions)) if len(y) > 1 else 0.0
+        score = max(-1.0, min(1.0, score))
 
-    def _detect_trend(
-        self,
-        change_percent
-    ):
+        current = float(y.iloc[-1])
+        predicted = float(model.predict(np.array([[len(y)]], dtype=float))[0])
+        if current == 0:
+            change = 0.0
+        else:
+            change = ((predicted - current) / abs(current)) * 100
 
-        if change_percent > 5:
+        # Avoid extreme extrapolation relative to observed scale.
+        scale = max(float(np.nanmax(np.abs(y))), 1.0)
+        warning = None
+        if abs(predicted) > scale * 10:
+            predicted = float(np.sign(predicted) * scale * 10)
+            warning = "Forecast was capped because extrapolation was unusually large."
+
+        return {
+            "metric": metric,
+            "status": "success",
+            "model": "LinearRegression",
+            "data_points": int(len(y)),
+            "period": period,
+            "r2_score": round(score, 3),
+            "model_fit": self._get_model_fit(score),
+            "current_value": round(current, 2),
+            "predicted_value": round(predicted, 2),
+            "change_percent": round(change, 2),
+            "trend": self._detect_trend(change),
+            "warning": warning,
+        }
+
+    @staticmethod
+    def _detect_trend(change):
+        if change > 5:
             return "Increasing"
-
-        elif change_percent < -5:
+        if change < -5:
             return "Decreasing"
-
         return "Stable"
 
-    # ==========================================================
-    # CONFIDENCE
-    # ==========================================================
-
-    def _get_confidence(
-        self,
-        r2
-    ):
-
+    @staticmethod
+    def _get_model_fit(r2):
         if r2 >= 0.80:
             return "High"
-
-        elif r2 >= 0.50:
+        if r2 >= 0.50:
             return "Medium"
-
         return "Low"
 
-    # ==========================================================
-    # INSIGHTS
-    # ==========================================================
+    @staticmethod
+    def _generate_insight(forecast):
+        if forecast.get("status") == "insufficient_data":
+            return f"{forecast['metric']}: insufficient data for a reliable forecast."
+        if forecast.get("status") == "constant_series":
+            return f"{forecast['metric']}: historical values are constant; no trend signal is present."
 
-    def _generate_insight(
-        self,
-        forecast
-    ):
-
-        if "error" in forecast:
-
-            return (
-                f"{forecast['metric']} "
-                f"forecast failed: "
-                f"{forecast['error']}"
-            )
-
-        if "warning" in forecast:
-
-            return (
-                f"{forecast['metric']}: "
-                f"{forecast['warning']}"
-            )
-
-        metric = forecast["metric"]
-
-        trend = forecast["trend"]
-
-        change = abs(
-            forecast["change_percent"]
-        )
-
-        confidence = forecast[
-            "confidence"
-        ]
-
-        if trend == "Increasing":
-
-            return (
-                f"{metric} is projected to increase "
-                f"by {change:.2f}% in the next period. "
-                f"Forecast confidence is {confidence}."
-            )
-
-        elif trend == "Decreasing":
-
-            return (
-                f"{metric} is projected to decrease "
-                f"by {change:.2f}% in the next period. "
-                f"Forecast confidence is {confidence}."
-            )
-
+        change = abs(forecast.get("change_percent", 0))
+        direction = forecast.get("trend", "Stable").lower()
+        fit = forecast.get("model_fit", "Unknown")
         return (
-            f"{metric} is expected to remain stable "
-            f"in the next period. "
-            f"Forecast confidence is {confidence}."
+            f"{forecast['metric']} is projected to be {direction} by "
+            f"{change:.2f}% in the next {forecast.get('period', 'period')}. "
+            f"Model fit: {fit}."
         )
