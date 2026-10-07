@@ -1,317 +1,157 @@
-def generate_recommendations(
-    business_info,
-    anomalies=None,
-    forecasts=None
-):
+def generate_recommendations(business_info, anomalies=None, forecasts=None, kpis=None):
+    anomalies = anomalies or []
     forecasts = forecasts or []
-
+    kpis = kpis or {}
     recommendations = []
 
-    metrics = [
-        metric.lower()
-        for metric in business_info.get(
-            "business_metrics",
-            []
-        )
-    ]
+    metrics = business_info.get("business_metrics", [])
+    metric_text = " ".join(str(m).lower() for m in metrics)
 
-    dimensions = [
-        dimension.lower()
-        for dimension in business_info.get(
-            "dimensions",
-            []
-        )
-    ]
-
-    # ==========================================
-    # HELPER
-    # ==========================================
-
-    def add_recommendation(
-        title,
-        category,
-        impact,
-        urgency,
-        confidence,
-        expected_impact,
-        reason,
-        risk="Medium"
-    ):
-
+    def add(title, category, impact, urgency, signal_strength, expected_impact, reason, risk="Medium", evidence=None):
         recommendations.append({
             "title": title,
             "category": category,
             "impact": impact,
             "risk": risk,
             "urgency": urgency,
-            "confidence": confidence,
+            "signal_strength": signal_strength,
             "expected_impact": expected_impact,
-            "reason": reason
+            "reason": reason,
+            "evidence": evidence or [],
         })
 
-    # ==========================================
-    # METRIC BASED
-    # ==========================================
+    revenue = kpis.get("total_revenue")
+    profit = kpis.get("total_profit")
+    margin = kpis.get("profit_margin_percent")
+    expenses = kpis.get("total_expenses")
 
-    if any(
-        keyword in " ".join(metrics)
-        for keyword in ["revenue", "sales"]
-    ):
-
-        add_recommendation(
-            title="Identify Revenue Growth Opportunities",
-            category="Revenue Optimization",
-            impact="High",
-            urgency="Soon",
-            confidence=85,
-            expected_impact="Increase revenue growth",
-            reason="Revenue metrics detected."
+    if revenue is not None:
+        add(
+            "Identify Revenue Growth Opportunities", "Revenue Optimization", "High", "Soon", 80,
+            "Improve revenue performance",
+            f"Total revenue is {revenue:,.2f}.",
+            evidence=[f"Revenue KPI = {revenue:,.2f}"],
         )
 
-    if "profit" in " ".join(metrics):
-
-        add_recommendation(
-            title="Improve Profit Margins",
-            category="Profitability",
-            impact="High",
-            risk="Medium",
-            urgency="Soon",
-            confidence=88,
-            expected_impact="Increase profitability",
-            reason="Profit metrics detected."
+    if profit is not None:
+        reason = f"Total profit is {profit:,.2f}."
+        if margin is not None:
+            reason += f" Profit margin is {margin:.2f}%."
+        add(
+            "Improve Profit Margins", "Profitability", "High", "Soon", 82,
+            "Improve sustainable profitability", reason,
+            evidence=[f"Profit KPI = {profit:,.2f}"] + ([f"Profit margin = {margin:.2f}%"] if margin is not None else []),
         )
 
-    if any(
-        keyword in " ".join(metrics)
-        for keyword in [
-            "expense",
-            "expenses",
-            "cost"
-        ]
-    ):
-
-        add_recommendation(
-            title="Reduce Operational Costs",
-            category="Cost Optimization",
-            impact="High",
-            urgency="Soon",
-            confidence=85,
-            expected_impact="Improve margins",
-            reason="Cost metrics detected."
+    if expenses is not None:
+        add(
+            "Reduce Operational Costs", "Cost Optimization", "High", "Soon", 80,
+            "Improve margins",
+            f"Total expenses are {expenses:,.2f}.",
+            evidence=[f"Expense KPI = {expenses:,.2f}"],
         )
-    
-    # ==========================================
-    # Forecast-Aware Rule
-    # ==========================================
 
     for forecast in forecasts:
+        if forecast.get("status") != "success":
+            continue
+        metric = str(forecast.get("metric", "")).lower()
+        change = float(forecast.get("change_percent", 0))
 
-        metric = forecast.get("metric")
-        change = forecast.get("change_percent", 0)
-
-        if metric == "Revenue" and change < -5:
-
-            add_recommendation(
-                title="Revenue Recovery Initiative",
-                category="Revenue Recovery",
-                impact="High",
-                risk="High",
-                urgency="Immediate",
-                confidence=90,
-                expected_impact="Reverse revenue decline",
-                reason=f"Revenue forecast declining by {abs(change):.2f}%."
+        if "revenue" in metric and change < -5:
+            add(
+                "Revenue Recovery Initiative", "Revenue Recovery", "High", "Immediate", 90,
+                "Reverse projected revenue decline",
+                f"Revenue forecast declines by {abs(change):.2f}%.",
+                "High",
+                [f"Revenue forecast change = {change:.2f}%"],
             )
-        if metric == "Expenses" and change > 5:
-
-            add_recommendation(
-                title="Investigate Expense Growth",
-                category="Cost Optimization",
-                impact="High",
-                risk="High",
-                urgency="Immediate",
-                confidence=90,
-                expected_impact="Control rising costs",
-                reason=f"Expenses forecast increasing by {change:.2f}%."
+        if ("expense" in metric or "cost" in metric) and change > 5:
+            add(
+                "Investigate Expense Growth", "Cost Optimization", "High", "Immediate", 90,
+                "Control projected cost growth",
+                f"Expense forecast increases by {change:.2f}%.",
+                "High",
+                [f"Expense forecast change = {change:.2f}%"],
+            )
+        if "profit" in metric and change < -10:
+            add(
+                "Protect Profit Margins", "Profit Recovery", "High", "Immediate", 92,
+                "Prevent projected profitability decline",
+                f"Profit forecast declines by {abs(change):.2f}%.",
+                "High",
+                [f"Profit forecast change = {change:.2f}%"],
             )
 
-        if metric == "Profit" and change < -10:
+    for anomaly in anomalies:
+        title = None
+        anomaly_type = anomaly.get("type")
+        severity = anomaly.get("severity", "Warning")
+        strength = 90 if severity == "Critical" else 75
+        evidence = [anomaly.get("message", "Anomaly detected.")]
+        if anomaly_type == "Cost Surge":
+            title = "Investigate Expense Growth"
+            category = "Cost Optimization"
+        elif anomaly_type == "Revenue Drop":
+            title = "Recover Lost Revenue"
+            category = "Revenue Recovery"
+        elif anomaly_type == "Profit Drop":
+            title = "Restore Profitability"
+            category = "Profit Recovery"
+        elif anomaly_type == "Margin Erosion":
+            title = "Protect Profit Margins"
+            category = "Margin Improvement"
+        else:
+            category = "Risk Management"
 
-            add_recommendation(
-                title="Protect Profit Margins",
-                category="Profit Recovery",
-                impact="High",
-                risk="High",
-                urgency="Immediate",
-                confidence=90,
-                expected_impact="Prevent profitability decline",
-                reason=f"Profit forecast declining by {abs(change):.2f}%."
+        if title:
+            add(
+                title, category, "High",
+                "Immediate" if severity == "Critical" else "Soon",
+                strength,
+                "Address detected business signal",
+                anomaly.get("message", "Anomaly detected."),
+                "High" if severity == "Critical" else "Medium",
+                evidence,
             )
-            
-    # ==========================================
-    # DIMENSION BASED
-    # ==========================================
 
-    if "date" in " ".join(dimensions):
-
-        add_recommendation(
-            title="Perform Forecasting Analysis",
-            category="Forecasting",
-            impact="Medium",
-            urgency="Future",
-            confidence=80,
-            expected_impact="Improve planning accuracy",
-            reason="Time-series dimension detected."
+    if "region" in metric_text:
+        add(
+            "Evaluate Regional Performance", "Market Strategy", "Medium", "Future", 70,
+            "Focus resources on high-performing regions",
+            "Regional dimension is available; compare regions before expanding.",
+            evidence=["Region dimension detected"],
         )
 
-    if "region" in " ".join(dimensions):
-
-        add_recommendation(
-            title="Expand High Performing Regions",
-            category="Market Expansion",
-            impact="High",
-            urgency="Future",
-            confidence=80,
-            expected_impact="Increase market share",
-            reason="Regional data available."
+    if "product" in metric_text:
+        add(
+            "Optimize Product Portfolio", "Product Strategy", "Medium", "Future", 70,
+            "Improve product-level profitability",
+            "Product-level data is available; prioritize products using observed KPI evidence.",
+            evidence=["Product dimension detected"],
         )
-
-    if "product" in " ".join(dimensions):
-
-        add_recommendation(
-            title="Optimize Product Portfolio",
-            category="Product Strategy",
-            impact="Medium",
-            urgency="Future",
-            confidence=80,
-            expected_impact="Improve product profitability",
-            reason="Product-level data detected."
-        )
-
-    if "customer" in " ".join(dimensions):
-
-        add_recommendation(
-            title="Improve Customer Retention",
-            category="Customer Success",
-            impact="High",
-            urgency="Soon",
-            confidence=85,
-            expected_impact="Increase customer lifetime value",
-            reason="Customer data detected."
-        )
-
-    # ==========================================
-    # ANOMALY BASED
-    # ==========================================
-
-    if anomalies:
-
-        for anomaly in anomalies:
-
-            anomaly_type = anomaly.get(
-                "type",
-                ""
-            )
-
-            severity = anomaly.get(
-                "severity",
-                "Warning"
-            )
-
-            confidence = (
-                95
-                if severity == "Critical"
-                else 85
-            )
-
-            if anomaly_type == "Cost Surge":
-
-                add_recommendation(
-                    title="Investigate Expense Growth",
-                    category="Cost Optimization",
-                    impact="High",
-                    urgency="Immediate",
-                    confidence=confidence,
-                    expected_impact="Prevent margin erosion",
-                    reason=anomaly.get(
-                        "message",
-                        ""
-                    ),
-                    risk="High"
-                )
-
-            elif anomaly_type == "Revenue Drop":
-
-                add_recommendation(
-                    title="Recover Lost Revenue",
-                    category="Revenue Recovery",
-                    impact="High",
-                    urgency="Immediate",
-                    confidence=confidence,
-                    expected_impact="Restore sales performance",
-                    reason=anomaly.get(
-                        "message",
-                        ""
-                    )
-                )
-
-            elif anomaly_type == "Profit Drop":
-
-                add_recommendation(
-                    title="Restore Profitability",
-                    category="Profit Recovery",
-                    impact="High",
-                    urgency="Immediate",
-                    confidence=confidence,
-                    expected_impact="Increase profits",
-                    reason=anomaly.get(
-                        "message",
-                        ""
-                    )
-                )
-
-            elif anomaly_type == "Margin Erosion":
-
-                add_recommendation(
-                    title="Protect Profit Margins",
-                    category="Margin Improvement",
-                    impact="High",
-                    urgency="Immediate",
-                    confidence=confidence,
-                    expected_impact="Improve margin stability",
-                    reason=anomaly.get(
-                        "message",
-                        ""
-                    )
-                )
-
-    # ==========================================
-    # REMOVE DUPLICATES
-    # ==========================================
-
-    unique = {}
-
-    for rec in recommendations:
-
-        unique[rec["title"]] = rec
-
-    recommendations = list(
-        unique.values()
-    )
-
-    # ==========================================
-    # FALLBACK
-    # ==========================================
 
     if not recommendations:
-
-        add_recommendation(
-            title="Collect More Business Data",
-            category="Data Quality",
-            impact="Low",
-            urgency="Future",
-            confidence=70,
-            expected_impact="Improve intelligence quality",
-            reason="Insufficient business signals."
+        add(
+            "Collect More Business Data", "Data Quality", "Low", "Future", 60,
+            "Improve decision quality",
+            "The current dataset does not contain enough recognized business signals.",
+            evidence=[],
         )
 
-    return recommendations
+    # Merge duplicate titles instead of silently overwriting evidence.
+    merged = {}
+    for rec in recommendations:
+        existing = merged.get(rec["title"])
+        if not existing:
+            merged[rec["title"]] = rec
+            continue
+
+        existing["evidence"] = list(dict.fromkeys(existing["evidence"] + rec["evidence"]))
+        existing["reason"] = " ".join(dict.fromkeys([existing["reason"], rec["reason"]]))
+        if rec["signal_strength"] > existing["signal_strength"]:
+            existing["signal_strength"] = rec["signal_strength"]
+        severity_rank = {"Low": 0, "Medium": 1, "High": 2}
+        if severity_rank.get(rec["risk"], 0) > severity_rank.get(existing["risk"], 0):
+            existing["risk"] = rec["risk"]
+
+    return list(merged.values())
