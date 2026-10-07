@@ -9,8 +9,8 @@ export default function WorkspaceHero({
   const [analysis, setAnalysis] =
     useState(null);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   return (
     <section
@@ -98,10 +98,23 @@ export default function WorkspaceHero({
           <NeuroInput
             setAnalysis={setAnalysis}
             setLoading={setLoading}
-            setDatasetMeta={
-              setDatasetMeta
-            }
+            setDatasetMeta={setDatasetMeta}
+            setError={setError}
           />
+        )}
+
+        {error && (
+          <div
+            role="alert"
+            className="mt-5 mx-auto max-w-3xl rounded-2xl px-5 py-4 text-left"
+            style={{
+              background: "rgba(179,38,74,0.12)",
+              border: "1px solid rgba(179,38,74,0.35)",
+              color: "#f5c4d2",
+            }}
+          >
+            {error}
+          </div>
         )}
 
         <WorkspaceChat
