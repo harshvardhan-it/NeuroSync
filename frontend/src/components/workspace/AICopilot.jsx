@@ -5,7 +5,7 @@ export default function AICopilot({ datasetMeta }) {
   const meta = datasetMeta || {};
   const datasetId = Number(localStorage.getItem("dataset_id"));
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {\n    const saved = localStorage.getItem(`chat_${datasetId}`);\n    if (!saved) return [];\n    try { return JSON.parse(saved); } catch { return []; }\n  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
