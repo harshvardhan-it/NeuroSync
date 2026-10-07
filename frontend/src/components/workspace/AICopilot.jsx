@@ -111,11 +111,9 @@ export default function AICopilot({
         ...prev,
         {
           role: "assistant",
-          content:
-            "⚠️ AI service unavailable.",
+          content: typeof message === "string" ? message : "⚠️ AI service unavailable.",
         },
       ]);
-    }
     } finally {
       setLoading(false);
     }
