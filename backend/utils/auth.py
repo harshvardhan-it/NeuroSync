@@ -1,100 +1,63 @@
-from datetime import datetime, timedelta
-from jose import jwt, JWTError
+from datetime import datetime, timedelta, timezone
+
 import bcrypt
-from dotenv import load_dotenv
-import os
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
+from sqlmodel import Session, select
 
 from backend.config.settings import settings
+from backend.models.user import User
+from backend.utils.database import get_session
 
-SECRET_KEY = settings.SECRET_KEY
 
-ALGORITHM = settings.ALGORITHM
-from backend.config.settings import settings
+bearer_scheme = HTTPBearer(auto_error=False)
 
-ACCESS_TOKEN_EXPIRE_MINUTES = (
-    settings.ACCESS_TOKEN_EXPIRE_MINUTES
-)
 
 def hash_password(password: str) -> str:
-    return bcrypt.hashpw(
-        password.encode("utf-8"),
-        bcrypt.gensalt()
-    ).decode("utf-8")
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return bcrypt.checkpw(
-        plain.encode("utf-8"),
-        hashed.encode("utf-8")
-    )
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
+
 
 def create_access_token(data: dict) -> str:
-    to_encode = data.copy()
-
-    expire = datetime.utcnow() + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+    payload = data.copy()
+    payload["exp"] = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-    to_encode.update({"exp": expire})
-
-    return jwt.encode(
-        to_encode,
-        SECRET_KEY,
-        algorithm=ALGORITHM
-    )
 
 def decode_token(token: str) -> dict:
     return jwt.decode(
         token,
-        SECRET_KEY,
-        algorithms=[ALGORITHM]
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM],
     )
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
-
-from sqlmodel import Session, select
-
-from backend.utils.database import get_session
-from backend.models.user import User
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/login"
-)
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    session: Session = Depends(get_session)
-):
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: Session = Depends(get_session),
+) -> User:
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Authentication required.")
 
     try:
-
-        payload = decode_token(token)
-
+        payload = decode_token(credentials.credentials)
         email = payload.get("sub")
-
         if not email:
-            raise HTTPException(
-                status_code=401,
-                detail="Invalid token"
-            )
+            raise HTTPException(status_code=401, detail="Invalid authentication token.")
 
-        user = session.exec(
-            select(User).where(
-                User.email == email
-            )
-        ).first()
-
+        user = session.exec(select(User).where(User.email == email)).first()
         if not user:
-            raise HTTPException(
-                status_code=404,
-                detail="User not found"
-            )
+            raise HTTPException(status_code=401, detail="Invalid authentication token.")
 
         return user
-
     except JWTError:
-
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token"
-        )
+        raise HTTPException(status_code=401, detail="Invalid authentication token.")
