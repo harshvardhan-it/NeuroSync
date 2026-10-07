@@ -216,3 +216,12 @@ const recommendation =
   );
 }
 
+
+function Metric({ label, value }) {
+  return (
+    <div className="flex justify-between">
+      <span style={{ color: "var(--text-secondary)" }}>{label}</span>
+      <span className="font-semibold">{value ?? "--"}</span>
+    </div>
+  );
+}
