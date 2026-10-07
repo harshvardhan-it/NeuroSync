@@ -32,7 +32,7 @@ export default function AuthPage() {
       }
     } catch (err) {
       setError(
-        err?.response?.data?.detail ||
+        err?.response?.data?.error ||
         "Something went wrong"
       );
     } finally {
