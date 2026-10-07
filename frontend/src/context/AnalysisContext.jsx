@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+/* eslint-disable react-refresh/only-export-components */\n\nimport { createContext, useState } from "react";
 
 export const AnalysisContext =
   createContext();
