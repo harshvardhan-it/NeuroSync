@@ -23,6 +23,9 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("dataset_id");
       localStorage.removeItem("dataset_meta");
+      if (window.location.pathname !== "/auth") {
+        window.location.href = "/auth";
+      }
     }
     return Promise.reject(error);
   }
