@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
 from backend.config.settings import settings
+from backend.models.chat_message import ChatMessage
 from backend.models.dataset import Dataset
 from backend.models.user import User
 
