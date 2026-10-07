@@ -21,7 +21,8 @@ def main():
         if {"id", "name", "email", "password"} <= user_columns and {
             "id", "user_id", "filename", "file_type", "analysis_result"
         } <= dataset_columns:
-            command.stamp(config, "head")
+            command.stamp(config, "0001_initial")
+            command.upgrade(config, "head")
             return
 
         raise RuntimeError("Existing database schema is incompatible with the initial migration.")
