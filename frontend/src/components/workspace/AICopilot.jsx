@@ -16,11 +16,7 @@ export default function AICopilot({
   const meta =
     datasetMeta || {};
 
-  const datasetId = Number(
-    localStorage.getItem(
-      "dataset_id"
-    )
-  );
+  const datasetId = Number(meta.id || localStorage.getItem("dataset_id") || 0);
 
   const [messages, setMessages] =
     useState([]);
@@ -63,10 +59,7 @@ export default function AICopilot({
           JSON.parse(savedChat)
         );
       } catch (error) {
-        console.error(
-          "Failed to restore chat",
-          error
-        );
+        console.warn("Failed to restore local chat history.");
       }
     } else {
       setMessages([]);
@@ -110,8 +103,10 @@ export default function AICopilot({
         },
       ]);
     } catch (error) {
-      console.error(error);
-
+      const message =
+        error.response?.data?.error?.message ||
+        error.response?.data?.error ||
+        "⚠️ AI service unavailable. Please try again.";
       setMessages((prev) => [
         ...prev,
         {
@@ -121,8 +116,9 @@ export default function AICopilot({
         },
       ]);
     }
-
-    setLoading(false);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function clearConversation() {
