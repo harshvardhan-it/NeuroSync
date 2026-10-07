@@ -5,7 +5,15 @@ export default function AICopilot({ datasetMeta }) {
   const meta = datasetMeta || {};
   const datasetId = Number(localStorage.getItem("dataset_id"));
 
-  const [messages, setMessages] = useState(() => {\n    const saved = localStorage.getItem(`chat_${datasetId}`);\n    if (!saved) return [];\n    try { return JSON.parse(saved); } catch { return []; }\n  });
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem(`chat_${datasetId}`);
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return [];
+    }
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -16,13 +24,10 @@ export default function AICopilot({ datasetMeta }) {
 
   useEffect(() => {
     if (!datasetId) return;
-    const saved = localStorage.getItem(`chat_${datasetId}`);
-    setMessages(saved ? JSON.parse(saved) : []);
-  }, [datasetId]);
-
-  useEffect(() => {
-    if (!datasetId) return;
-    localStorage.setItem(`chat_${datasetId}`, JSON.stringify(messages.slice(-10)));
+    localStorage.setItem(
+      `chat_${datasetId}`,
+      JSON.stringify(messages.slice(-10))
+    );
   }, [messages, datasetId]);
 
   async function sendMessage(predefinedQuestion = null) {
@@ -69,43 +74,23 @@ export default function AICopilot({ datasetMeta }) {
   ];
 
   return (
-    <div
-      className="rounded-[28px] p-6 min-h-[650px] max-h-[85vh] flex flex-col"
-      style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        backdropFilter: "blur(24px)",
-      }}
-    >
+    <div className="rounded-[28px] p-6 min-h-[650px] max-h-[85vh] flex flex-col"
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(24px)" }}>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-display font-bold">🧠 Executive AI Consultant</h2>
-          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-            CFO-style business intelligence powered by Groq
-          </p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>CFO-style business intelligence powered by Groq</p>
         </div>
         {messages.length > 0 && (
-          <button
-            onClick={clearConversation}
-            className="px-3 py-2 rounded-xl text-sm"
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "var(--text-secondary)",
-            }}
-          >
+          <button onClick={clearConversation} className="px-3 py-2 rounded-xl text-sm"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}>
             Clear Chat
           </button>
         )}
       </div>
 
-      <div
-        className="mb-4 px-4 py-3 rounded-2xl flex flex-wrap items-center gap-4"
-        style={{
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.08)",
-        }}
-      >
+      <div className="mb-4 px-4 py-3 rounded-2xl flex flex-wrap items-center gap-4"
+        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="font-medium truncate">📁 {meta.name || "No dataset selected"}</div>
         <div className="text-sm" style={{ color: "var(--text-secondary)" }}>📊 {meta.rows || 0} Rows</div>
         <div className="text-sm" style={{ color: "var(--text-secondary)" }}>📈 {meta.columns || 0} Columns</div>
@@ -116,20 +101,12 @@ export default function AICopilot({ datasetMeta }) {
           <div className="text-sm uppercase tracking-wider mb-3 opacity-70">Executive Quick Actions</div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {executiveActions.map(([title, icon, prompt]) => (
-              <button
-                key={title}
-                onClick={() => sendMessage(prompt)}
+              <button key={title} onClick={() => sendMessage(prompt)}
                 className="p-4 rounded-2xl text-left hover:scale-[1.02] transition-all"
-                style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="text-3xl mb-3">{icon}</div>
                 <div className="font-semibold text-base">{title}</div>
-                <div className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>
-                  Launch executive analysis
-                </div>
+                <div className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>Launch executive analysis</div>
               </button>
             ))}
           </div>
@@ -142,26 +119,18 @@ export default function AICopilot({ datasetMeta }) {
             <div>
               <div className="text-5xl mb-4">🤖</div>
               <h3 className="text-2xl font-semibold mb-2">NeuroSync Executive Consultant</h3>
-              <p className="max-w-xl">
-                Analyze business performance, diagnose operational risks, discover growth opportunities,
-                optimize costs, and generate CFO-style strategic recommendations.
-              </p>
+              <p className="max-w-xl">Analyze business performance, diagnose operational risks, discover growth opportunities, optimize costs, and generate CFO-style strategic recommendations.</p>
             </div>
           </div>
         )}
 
         {messages.map((msg, idx) => (
           <div key={idx} className={msg.role === "user" ? "max-w-[60%] ml-auto" : "max-w-[65%]"}>
-            <div className="mb-2 text-xs opacity-60">
-              {msg.role === "user" ? "🧑 You" : "🤖 NeuroSync AI"}
-            </div>
+            <div className="mb-2 text-xs opacity-60">{msg.role === "user" ? "🧑 You" : "🤖 NeuroSync AI"}</div>
             <div
               className={`p-4 shadow-lg ${msg.role === "user" ? "rounded-3xl rounded-br-lg" : "rounded-3xl rounded-bl-lg"}`}
               style={{
-                background:
-                  msg.role === "user"
-                    ? "linear-gradient(135deg,#E7B75F,#B3264A)"
-                    : "rgba(255,255,255,0.05)",
+                background: msg.role === "user" ? "linear-gradient(135deg,#E7B75F,#B3264A)" : "rgba(255,255,255,0.05)",
                 color: msg.role === "user" ? "#000" : "#fff",
                 border: "1px solid rgba(255,255,255,0.08)",
                 whiteSpace: "pre-wrap",
@@ -188,20 +157,13 @@ export default function AICopilot({ datasetMeta }) {
           placeholder={datasetId ? "Ask a strategic business question..." : "Upload a dataset first"}
           disabled={!datasetId || loading}
           className="flex-1 px-4 py-4 rounded-2xl outline-none"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "#fff",
-          }}
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}
         />
         <button
           onClick={() => sendMessage()}
           disabled={!datasetId || loading}
           className="px-6 rounded-2xl font-semibold hover:scale-105 transition-all disabled:opacity-50"
-          style={{
-            background: "linear-gradient(135deg,#E7B75F,#B3264A)",
-            color: "#000",
-          }}
+          style={{ background: "linear-gradient(135deg,#E7B75F,#B3264A)", color: "#000" }}
         >
           Ask AI →
         </button>
