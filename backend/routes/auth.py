@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-from jose import JWTError
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError
 
@@ -7,7 +6,6 @@ from backend.models.user import User
 from backend.schemas.auth_schema import RegisterSchema, LoginSchema
 from backend.utils.database import get_session
 from backend.utils.auth import hash_password, verify_password, create_access_token, decode_token, get_current_user
-from backend.utils.logger import logger
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
