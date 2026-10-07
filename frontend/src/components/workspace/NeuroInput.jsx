@@ -10,9 +10,6 @@ export default function NeuroInput({
   setLoading,
   setDatasetMeta,
 }) {
-  const [value, setValue] =
-    useState("");
-
   const [file, setFile] =
     useState(null);
 
