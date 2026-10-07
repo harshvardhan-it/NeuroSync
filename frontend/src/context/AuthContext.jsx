@@ -153,6 +153,14 @@ export function AuthProvider({
       "dataset_meta"
     );
 
+    localStorage.removeItem(
+      "neurosync_analysis"
+    );
+
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith("chat_"))
+      .forEach((key) => localStorage.removeItem(key));
+
     setUser(null);
 
     // Force redirect
