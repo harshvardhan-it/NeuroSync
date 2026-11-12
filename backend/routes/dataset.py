@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
-
+import math
+import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -42,6 +43,34 @@ def _get_owned_dataset(dataset_id: int, user: User, session: Session) -> Dataset
 def _safe_storage_name(extension: str) -> str:
     return f"{uuid4().hex}.{extension}"
 
+def _make_json_safe(value):
+    """Recursively convert NumPy/Pandas values into JSON-safe Python values."""
+
+    if value is None or value is pd.NA or value is pd.NaT:
+        return None
+
+    if isinstance(value, np.ndarray):
+        return [_make_json_safe(item) for item in value.tolist()]
+
+    if isinstance(value, np.generic):
+        return _make_json_safe(value.item())
+
+    if isinstance(value, dict):
+        return {
+            str(key): _make_json_safe(item)
+            for key, item in value.items()
+        }
+
+    if isinstance(value, (list, tuple, set)):
+        return [_make_json_safe(item) for item in value]
+
+    if isinstance(value, (pd.Timestamp, datetime)):
+        return value.isoformat()
+
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+
+    return value
 
 @router.post("/upload")
 def upload_dataset(
@@ -115,16 +144,33 @@ def upload_dataset(
 
         try:
             analysis = analyze_dataframe(df)
+
+            # Normalize NumPy/Pandas values before PostgreSQL JSON storage.
+            analysis = _make_json_safe(analysis)
+
             dataset.analysis_result = analysis
             dataset.status = "completed"
+
             session.add(dataset)
             session.commit()
             session.refresh(dataset)
+
         except Exception:
-            dataset.status = "failed"
-            session.add(dataset)
-            session.commit()
-            logger.exception("Analysis failed for dataset %s", dataset.id)
+            dataset_id = dataset.id
+
+            # Clear the failed SQLAlchemy transaction first.
+            session.rollback()
+
+            # Reload the already-created dataset and mark it failed.
+            failed_dataset = session.get(Dataset, dataset_id)
+
+            if failed_dataset:
+                failed_dataset.status = "failed"
+                session.add(failed_dataset)
+                session.commit()
+
+            logger.exception("Analysis failed for dataset %s", dataset_id)
+
             raise HTTPException(
                 status_code=500,
                 detail="Dataset analysis failed. Please try another dataset.",
