@@ -36,17 +36,29 @@ class RiskAssessmentEngine:
         revenue_col = None
         customer_col = None
 
+        customer_metric_names = (
+            "customer_count",
+            "customers_count",
+            "total_customers",
+            "number_of_customers",
+            "active_customers",
+            "active_customer_count",
+        )
+
         for col in df.columns:
 
-            col_lower = col.lower()
+            col_lower = (
+                str(col)
+                .strip()
+                .lower()
+                .replace(" ", "_")
+                .replace("-", "_")
+            )
 
-            if (
-                "revenue" in col_lower
-                or "sales" in col_lower
-            ):
+            if "revenue" in col_lower or "sales" in col_lower:
                 revenue_col = col
 
-            if "customer" in col_lower:
+            if any(name in col_lower for name in customer_metric_names):
                 customer_col = col
 
         # ==========================================
@@ -147,21 +159,20 @@ class RiskAssessmentEngine:
 
         if customer_col:
 
-            customer_values = (
-                df[customer_col]
-                .dropna()
-                .tolist()
-            )
+            customer_values = []
+
+            for value in df[customer_col].dropna().tolist():
+                try:
+                    customer_values.append(float(value))
+                except (TypeError, ValueError):
+                    continue
 
             if len(customer_values) >= 2:
 
                 previous = customer_values[-2]
                 current = customer_values[-1]
 
-                if (
-                    previous > 0
-                    and current < previous
-                ):
+                if previous > 0 and current < previous:
 
                     risk_score += 10
 
@@ -169,9 +180,7 @@ class RiskAssessmentEngine:
                         "risk_type": "Customer Risk",
                         "severity": "Medium",
                         "score": 10,
-                        "reason": (
-                            "Customer count is declining."
-                        )
+                        "reason": "Customer count is declining."
                     })
 
         # ==========================================
