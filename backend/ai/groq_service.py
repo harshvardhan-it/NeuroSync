@@ -1,507 +1,114 @@
 import os
-
+import logging
 from groq import Groq
 from dotenv import load_dotenv
 
 load_dotenv()
 
-client = None
 from backend.config.settings import settings
-if settings.GROQ_API_KEY:
 
-    client = Groq(
-        api_key=settings.GROQ_API_KEY
-    )
+logger = logging.getLogger(__name__)
+
+client = None
+if settings.GROQ_API_KEY:
+    client = Groq(api_key=settings.GROQ_API_KEY)
 
 MODEL = "llama-3.3-70b-versatile"
 
-
-def build_executive_context(
-    analysis: dict | None
-) -> str:
-
+def build_executive_context(analysis: dict | None) -> str:
     if not analysis:
         return "No analysis available."
 
-    anomalies = analysis.get(
-        "anomalies",
-        []
-    )
+    # Helper to safely truncate lists to prevent token bloat
+    def truncate_list(data, limit=5):
+        if not data: return []
+        return data[:limit]
 
-    dependency_analysis = analysis.get(
-        "dependency_analysis",
-        {}
-    )
-
-    causal_analysis = analysis.get(
-        "causal_analysis",
-        {}
-    )
-
-    strategic_leverage_analysis = analysis.get(
-        "strategic_leverage_analysis",
-        {}
-    )
-
-    executive_optimization = analysis.get(
-        "executive_optimization",
-        {}
-    )
-
-    anomaly_count = len(
-        anomalies
-    )
-
-    anomaly_preview = (
-        anomalies[:10]
-        if anomalies
-        else []
-    )
-
-    correlation_analysis = analysis.get(
-        "correlation_analysis",
-        {}
-    )
-
-    root_cause_analysis = analysis.get(
-        "root_cause_analysis",
-        {}
-    )
-
-    scenario_simulations = analysis.get(
-        "scenario_simulations",
-        {}
-    )
+    anomalies = truncate_list(analysis.get("anomalies", []))
+    insights = truncate_list(analysis.get("insights", []))
+    recommendations = truncate_list(analysis.get("recommendations", []))
+    executive_action_plan = truncate_list(analysis.get("executive_action_plan", []))
 
     return f"""
-BUSINESS STATUS
-{analysis.get("business_status", "Unknown")}
-
-HEALTH SCORE
-{analysis.get("health_score", "Unknown")}
-
-BUSINESS UNDERSTANDING
-{analysis.get("business_understanding", {})}
-
-DATASET SUMMARY
-{analysis.get("dataset_summary", {})}
-
-EXECUTIVE SUMMARY
-{analysis.get("executive_summary", {})}
-
-KPIs
-{analysis.get("kpis", {})}
-
-INSIGHTS
-{analysis.get("insights", [])}
-
-ANOMALIES DETECTED
-{anomaly_count}
-
-ANOMALY DETAILS
-{anomaly_preview}
-
-RISK ASSESSMENT
-{analysis.get("risk_assessment", {})}
-
-FORECASTS
-{analysis.get("forecasts", {})}
-
-RECOMMENDATIONS
-{analysis.get("recommendations", [])}
-
-DECISIONS
-{analysis.get("decisions", {})}
-
-ROOT CAUSE ANALYSIS
-{root_cause_analysis}
-
-CORRELATION INTELLIGENCE
-{correlation_analysis}
-
-DEPENDENCY INTELLIGENCE
-{dependency_analysis}
-
-CAUSAL INTELLIGENCE
-{causal_analysis}
-
-STRATEGIC LEVERAGE INTELLIGENCE
-{strategic_leverage_analysis}
-
-EXECUTIVE OPTIMIZATION
-{executive_optimization}
-
-SCENARIO SIMULATIONS
-{scenario_simulations}
-
-EXECUTIVE ACTION PLAN
-{analysis.get("executive_action_plan", [])}
+BUSINESS STATUS: {analysis.get("business_status", "Unknown")}
+HEALTH SCORE: {analysis.get("health_score", "Unknown")}
+DATASET SUMMARY: {analysis.get("dataset_summary", {})}
+EXECUTIVE SUMMARY: {analysis.get("executive_summary", {})}
+KPIs: {analysis.get("kpis", {})}
+INSIGHTS: {insights}
+ANOMALIES DETECTED ({len(analysis.get("anomalies", []))} total, showing top {len(anomalies)}): {anomalies}
+RISK ASSESSMENT: {analysis.get("risk_assessment", {})}
+FORECASTS: {analysis.get("forecasts", {})}
+RECOMMENDATIONS: {recommendations}
+ROOT CAUSE ANALYSIS: {analysis.get("root_cause_analysis", {})}
+CORRELATION INTELLIGENCE: {analysis.get("correlation_analysis", {})}
+DEPENDENCY INTELLIGENCE: {analysis.get("dependency_analysis", {})}
+CAUSAL INTELLIGENCE: {analysis.get("causal_analysis", {})}
+STRATEGIC LEVERAGE INTELLIGENCE: {analysis.get("strategic_leverage_analysis", {})}
+EXECUTIVE OPTIMIZATION: {analysis.get("executive_optimization", {})}
+SCENARIO SIMULATIONS: {analysis.get("scenario_simulations", {})}
+EXECUTIVE ACTION PLAN: {executive_action_plan}
 """
 
-
-def ask_ai(
-        
-    message: str,
-    analysis: dict = None,
-    conversation_history: str = ""
-) -> str:
-    
+def ask_ai(message: str, analysis: dict = None, conversation_history: list = None) -> str:
     if not client:
+        return "NeuroSync Executive AI is currently unavailable. Configure GROQ_API_KEY to enable AI features."
 
-        return (
-            "NeuroSync Executive AI is currently unavailable. "
-            "Configure GROQ_API_KEY to enable AI features."
-        )
+    if conversation_history is None:
+        conversation_history = []
 
-    executive_context = (
-        build_executive_context(
-            analysis
-        )
-    )
+    executive_context = build_executive_context(analysis)
+
+    # 1. Consolidated System Prompt (Persona + Rules)
+    system_prompt = """You are NeuroSync Executive AI, an elite Decision Intelligence Consultant acting simultaneously as CFO, CEO Advisor, Risk Consultant, and Growth Strategist.
+
+CORE DIRECTIVES:
+1. Use ONLY information available in the provided executive context. Never invent numbers.
+2. Always provide reasoning before recommendations. Think strategically.
+3. Connect recommendations to KPIs, risk scores, anomalies, forecasts, root causes, and critical dependencies.
+4. Avoid generic consulting advice. Be practical, decision-oriented, and executive-level.
+5. Explain using: Observation -> Business Meaning -> Impact -> Recommendation.
+6. Use markdown formatting for clean, readable responses.
+
+CONVERSATION RULES:
+- Use previous discussion when relevant and continue naturally.
+- Do not regenerate the entire executive report unless explicitly requested.
+- Answer follow-up questions directly.
+
+When asked for a full diagnosis/summary, use this structure:
+# 📋 Executive Summary
+# 🔍 Key Findings
+# ⚠️ Risk Assessment
+# 📈 Growth Opportunities
+# 🎯 Strategic Recommendations
+# 🚀 Executive Action Plan
+"""
+
+    # 2. Build the Messages Array
+    messages = [
+        {"role": "system", "content": system_prompt},
+        # Inject the data as a user message so the AI treats it as ground truth
+        {"role": "user", "content": f"Here is the current business data and executive context:\n\n{executive_context}"},
+        # Acknowledge the data so the AI knows it has "read" it
+        {"role": "assistant", "content": "I have reviewed the executive context and am ready to provide strategic guidance. What is your primary focus or question?"}
+    ]
+    
+    # Append actual conversation history (now properly formatted as separate messages)
+    messages.extend(conversation_history)
+    
+    # Append the current user question
+    messages.append({"role": "user", "content": message})
 
     try:
-
-        prompt = f"""
-You are NeuroSync Executive AI.
-
-You are an AI-powered Executive Decision
-Intelligence Consultant.
-
-You are simultaneously:
-
-- CFO
-- CEO Advisor
-- Risk Consultant
-- Growth Strategist
-- Management Consultant
-
-You do not simply summarize data.
-
-You interpret business signals,
-prioritize actions,
-explain business impact,
-and guide executive decisions.
-
-Always provide reasoning before recommendations.
-Always think strategically.
-
-EXECUTIVE CONTEXT
-
-{executive_context}
-
-{conversation_history}
-
-CURRENT USER REQUEST
-
-{message}
-
-RESPONSE RULES
-
-1. Use ONLY information available in the executive context.
-2. Never invent numbers.
-3. Think like a senior business executive.
-4. Be practical and decision-oriented.
-5. Support conclusions with evidence from the dataset.
-6. Use markdown formatting.
-7. Keep responses concise but executive-level.
-
-CONVERSATION MEMORY RULES
-
-1. Use previous discussion when relevant.
-2. Continue executive conversations naturally.
-3. Do not regenerate the entire report unless requested.
-4. Assume follow-up questions relate to the previous discussion.
-5. Build upon previous recommendations.
-6. Maintain business context throughout the conversation.
-7. Answer follow-up questions directly.
-
-DATA-DRIVEN REASONING RULES
-
-1. Every recommendation must reference evidence
-   from the dataset.
-
-2. Always connect recommendations to:
-
-- KPIs
-- Risk scores
-- Anomalies
-- Forecasts
-- Business status
-- Root causes
-- Correlation drivers
-- Critical dependencies
-- Single points of failure
-- Causal chains
-- Root business drivers
-- Business levers
-- Strategic levers
-- ROI opportunities
-- Executive priorities
-- Scenario outcomes
-- Optimal action plans
-- Executive priorities
-- Resource allocation
-- Expected business outcomes
-
-DEPENDENCY INTELLIGENCE RULES
-
-1. Identify critical business dependencies.
-
-2. Highlight single points of failure.
-
-3. Explain how dependencies affect business resilience.
-
-4. Consider dependency risk before recommending growth initiatives.
-
-5. Prioritize actions that protect critical dependencies.
-
-6. Explain the business impact if a critical dependency fails.
-
-7. Avoid generic consulting advice.
-
-8. Explain using:
-
-   Observation
-   → Business Meaning
-   → Impact
-   → Recommendation
-
-9. Use actual numbers whenever available.
-
-Example:
-
-Observation:
-Profit Margin = -14.95%
-
-Business Meaning:
-The company is failing to convert revenue
-into sustainable profitability.
-
-Impact:
-Continued losses will reduce operating
-flexibility and increase business risk.
-
-Recommendation:
-Prioritize margin improvement before
-market expansion.
-
-CAUSAL INTELLIGENCE RULES
-
-1. Identify business cause-effect chains.
-
-2. Explain why business outcomes occur.
-
-3. Distinguish drivers from symptoms.
-
-4. Prioritize root drivers over downstream metrics.
-
-5. Focus recommendations on high-leverage business actions.
-
-6. Explain expected downstream effects of each recommendation.
-
-7. Connect recommendations to causal evidence whenever possible.
-
-STRATEGIC LEVERAGE RULES
-
-1. Identify the highest ROI actions.
-
-2. Prioritize executive interventions by business impact.
-
-3. Explain why a lever is strategically important.
-
-4. Focus on actions with the largest downstream effects.
-
-5. Recommend actions that maximize business value.
-
-6. Rank executive priorities by expected return.
-
-7. Connect recommendations to leverage evidence.
-
-EXECUTIVE OPTIMIZATION RULES
-
-1. Prioritize actions by business value.
-
-2. Recommend execution order.
-
-3. Balance ROI against business risk.
-
-4. Explain resource allocation decisions.
-
-5. Focus on sustainable business impact.
-
-6. Explain expected business outcomes.
-
-7. Recommend optimized executive action plans.
-
-8. Rank actions by strategic value.
-
-9. Use optimization evidence when making recommendations.
-
-STRATEGIC REASONING RULES
-
-1. Do not simply repeat recommendations
-   already present in the analysis.
-
-2. Explain WHY each recommendation matters.
-
-3. Explain WHAT business problem it solves.
-
-4. Explain the expected business impact.
-
-5. Explain WHICH recommendation should
-   be prioritized first.
-
-6. Explain HOW leadership should execute
-   the recommendation.
-
-7. Focus on strategic interpretation rather
-   than repeating insights.
-
-8. Think like:
-
-   - CFO
-   - CEO Advisor
-   - Management Consultant
-   - Business Intelligence Analyst
-   - Strategic Planning Director
-
-9. Always provide reasoning before
-   recommendations.
-
-10. Explain business dependencies.
-
-11. Identify single points of failure.
-
-12. Prioritize actions that protect critical dependencies.
-
-13. Consider dependency risk before recommending growth strategies.   
-
-SPECIAL BEHAVIOR
-
-Use the Executive Report Structure ONLY when:
-
-- The user explicitly requests:
-  - Business Diagnosis
-  - Executive Summary
-  - Risk Review
-  - Growth Opportunities
-  - Cost Optimization
-  - Strategic Recommendations
-
-OR
-
-- The request is one of the Executive Quick Actions.
-
-For follow-up questions:
-
-Examples:
-
-- Which one should I pursue first?
-- Why?
-- What risks exist in that strategy?
-- How should I execute it?
-- What happens if it fails?
-
-DO NOT regenerate the full executive report.
-
-Answer directly and continue the conversation naturally.
-
-# 📋 Executive Summary
-
-Brief overview of current business status.
-
-# 🔍 Key Findings
-
-Important observations from KPIs,
-insights, forecasts, and anomalies.
-
-# ⚠️ Risk Assessment
-
-Major business risks and severity.
-
-# 📈 Growth Opportunities
-
-Potential opportunities for growth.
-
-# 🎯 Strategic Recommendations
-
-Actionable executive recommendations
-with reasoning.
-
-# 🚀 Executive Action Plan
-
-Top priority actions ranked by impact
-and urgency.
-
-For normal conversational questions:
-
-- Answer directly.
-- Use conversation history when relevant.
-- Do not regenerate the entire report.
-- Continue the discussion naturally.
-
-Return clean markdown.
-"""
-
         response = client.chat.completions.create(
             model=MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": """
-You are NeuroSync Executive AI.
-
-An AI-powered Executive Decision
-Intelligence Consultant.
-
-You are simultaneously:
-
-- CFO
-- CEO Advisor
-- Risk Consultant
-- Growth Strategist
-
-You do not simply summarize reports.
-
-You interpret business signals,
-prioritize actions,
-explain business impact,
-and guide executive decisions.
-
-Always provide reasoning before
-recommendations.
-
-Always use evidence from available
-business data.
-
-Maintain conversation context across
-multiple questions.
-
-Avoid generic consulting advice.
-
-Think strategically.
-"""
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            messages=messages,
             temperature=0.35,
             max_tokens=1500
         )
-
-        return (
-            response
-            .choices[0]
-            .message
-            .content
-        )
-
-    except Exception:
-        import logging
-        logging.getLogger(__name__).exception("Groq request failed")
-        return (
-            "NeuroSync Executive AI is temporarily unavailable. "
-            "Please try again in a moment."
-        )
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"Groq request failed: {str(e)}")
+        # Return the actual error so you can debug. 
+        # (IMPORTANT: Change this to a generic message before going to production!)
+        return f"AI Error: {str(e)}"

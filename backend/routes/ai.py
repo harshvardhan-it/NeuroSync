@@ -12,13 +12,11 @@ from backend.utils.database import get_session
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
-
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=settings.AI_MAX_MESSAGE_LENGTH)
     dataset_id: int = Field(gt=0)
 
-
-def _build_history(session: Session, user_id: int, dataset_id: int) -> str:
+def _build_history(session: Session, user_id: int, dataset_id: int) -> list:
     rows = session.exec(
         select(ChatMessage)
         .where(
@@ -28,16 +26,12 @@ def _build_history(session: Session, user_id: int, dataset_id: int) -> str:
         .order_by(ChatMessage.created_at.desc())
         .limit(10)
     ).all()
-
+    
     if not rows:
-        return ""
-
-    lines = ["\nPREVIOUS DISCUSSION\n"]
-    for message in reversed(rows):
-        role = "User" if message.role == "user" else "AI"
-        lines.append(f"{role}: {message.content}\n")
-    return "\n".join(lines)
-
+        return []
+    
+    # Return as a list of dicts in chronological order (oldest first)
+    return [{"role": msg.role, "content": msg.content} for msg in reversed(rows)]
 
 @router.post("/chat")
 def chat(
@@ -46,45 +40,16 @@ def chat(
     session: Session = Depends(get_session),
 ):
     dataset = session.get(Dataset, data.dataset_id)
-
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found.")
-
     if dataset.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied.")
 
-    analysis = dataset.analysis_result or {}
-    analysis_context = {
-        key: analysis.get(key)
-        for key in (
-            "business_status",
-            "health_score",
-            "business_understanding",
-            "executive_summary",
-            "dataset_summary",
-            "kpis",
-            "insights",
-            "anomalies",
-            "risk_assessment",
-            "forecasts",
-            "recommendations",
-            "decisions",
-            "executive_action_plan",
-            "root_cause_analysis",
-            "correlation_analysis",
-            "dependency_analysis",
-            "causal_analysis",
-            "strategic_leverage_analysis",
-            "executive_optimization",
-            "scenario_simulations",
-        )
-    }
+    # Pass the whole analysis object. The groq_service will handle truncating large arrays.
+    analysis_context = dataset.analysis_result or {} 
 
-    history = _build_history(
-        session,
-        current_user.id,
-        data.dataset_id,
-    )
+    # This is now a list of message dictionaries, not a string
+    history = _build_history(session, current_user.id, data.dataset_id)
 
     response = ask_ai(
         message=data.message,
@@ -92,6 +57,7 @@ def chat(
         conversation_history=history,
     )
 
+    # Save to DB
     session.add_all([
         ChatMessage(
             user_id=current_user.id,
@@ -113,7 +79,6 @@ def chat(
         "message": "AI response generated.",
         "data": response,
     }
-
 
 @router.get("/history/{dataset_id}")
 def chat_history(
@@ -145,7 +110,6 @@ def chat_history(
         ],
     }
 
-
 @router.delete("/history/{dataset_id}")
 def clear_chat_history(
     dataset_id: int,
@@ -167,6 +131,7 @@ def clear_chat_history(
 
     for message in messages:
         session.delete(message)
-
     session.commit()
+
     return {"success": True, "message": "Chat history cleared.", "data": None}
+    
