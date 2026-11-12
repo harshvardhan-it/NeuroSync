@@ -1,3 +1,4 @@
+
 import axios from "axios";
 
 const API_URL =
@@ -5,9 +6,6 @@ const API_URL =
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
   timeout: 30000,
 });
 
@@ -39,11 +37,22 @@ export const getCurrentUser = () => api.get("/auth/me");
 
 export const getDatasets = () => api.get("/dataset/");
 
+
 export const uploadDataset = (file) => {
+  if (!(file instanceof File)) {
+    throw new Error("Invalid upload: expected a File object.");
+  }
+
   const form = new FormData();
-  form.append("file", file);
-  return api.post("/dataset/upload", form);
+  form.append("file", file, file.name);
+
+  return api.post("/dataset/upload", form, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };
+
 
 export const getDataset = (datasetId) =>
   api.get(`/dataset/${datasetId}`);
