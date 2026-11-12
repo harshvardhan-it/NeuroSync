@@ -13,7 +13,7 @@ client = None
 if settings.GROQ_API_KEY:
     client = Groq(api_key=settings.GROQ_API_KEY)
 
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "openai/gpt-oss-120b"
 
 def build_executive_context(analysis: dict | None) -> str:
     if not analysis:
