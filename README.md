@@ -45,7 +45,7 @@ The platform is built around a simple workflow:
 
 ## Implementation Status
 
-The repository includes a working CSV/XLSX ingestion and backend analysis pipeline, dataset-scoped authentication and chat APIs, executive-summary generation, and PDF report generation. The dedicated **Insights, Anomalies, Forecasts, and Risk** frontend pages currently contain sample presentation data; treat those pages as UI previews rather than live, dataset-specific result views. The executive dashboard and analysis workflow are the better representation of the current end-to-end implementation.
+The repository includes a CSV/XLSX ingestion and backend analysis pipeline, dataset-scoped authentication and chat APIs, executive-summary generation, and PDF report generation. The **Insights, Anomalies, Forecasts, and Risk** pages read the selected dataset's stored analysis result through the authenticated dataset API. Forecast and risk outputs should be interpreted in light of the uploaded data and the documented baseline methods; unavailable or insufficient results are shown as such rather than replaced with sample business figures.
 
 ## Live Deployment
 
