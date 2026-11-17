@@ -100,10 +100,32 @@ def upload_dataset(
     try:
         file_path.write_bytes(contents)
 
+        # Read only the header first so configured column/cell limits can
+        # constrain the full parse instead of being checked after allocation.
         if extension == "csv":
-            df = pd.read_csv(file_path)
+            header = pd.read_csv(file_path, nrows=0)
         else:
-            df = pd.read_excel(file_path)
+            header = pd.read_excel(file_path, nrows=0, engine="openpyxl")
+
+        column_count = len(header.columns)
+        if column_count > settings.MAX_DATASET_COLUMNS:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Dataset exceeds the {settings.MAX_DATASET_COLUMNS} column limit.",
+            )
+
+        max_rows_by_cells = settings.MAX_DATASET_CELLS // max(column_count, 1)
+        rows_to_read = min(settings.MAX_DATASET_ROWS, max_rows_by_cells)
+        parse_options = {"nrows": rows_to_read + 1}
+
+        if extension == "csv":
+            df = pd.read_csv(file_path, **parse_options)
+        else:
+            df = pd.read_excel(
+                file_path,
+                engine="openpyxl",
+                **parse_options,
+            )
 
         if df.empty:
             raise HTTPException(status_code=400, detail="Dataset is empty.")

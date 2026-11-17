@@ -1,29 +1,21 @@
-export default function NeuralParticles() {
-  const particles = Array.from(
-    { length: 24 },
-    (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      top: Math.random() * 100,
-      size: Math.random() * 4 + 2,
-      duration: Math.random() * 12 + 8,
-      delay: Math.random() * 5,
-      color:
-        i % 2 === 0
-          ? "#E7B75F"
-          : "#B3264A",
-    })
-  );
+const seededValue = (seed) => {
+  const value = Math.sin(seed * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
+};
 
+const particles = Array.from({ length: 24 }, (_, index) => ({
+  id: index,
+  left: seededValue(index + 1) * 100,
+  top: seededValue(index + 25) * 100,
+  size: seededValue(index + 49) * 4 + 2,
+  duration: seededValue(index + 73) * 12 + 8,
+  delay: seededValue(index + 97) * 5,
+  color: index % 2 === 0 ? "#E7B75F" : "#B3264A",
+}));
+
+export default function NeuralParticles() {
   return (
-    <div
-      className="
-        absolute
-        inset-0
-        overflow-hidden
-        pointer-events-none
-      "
-    >
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map((particle) => (
         <div
           key={particle.id}
@@ -33,12 +25,9 @@ export default function NeuralParticles() {
             top: `${particle.top}%`,
             width: `${particle.size}px`,
             height: `${particle.size}px`,
-            background:
-              particle.color,
-            animationDuration:
-              `${particle.duration}s`,
-            animationDelay:
-              `${particle.delay}s`,
+            background: particle.color,
+            animationDuration: `${particle.duration}s`,
+            animationDelay: `${particle.delay}s`,
           }}
         />
       ))}

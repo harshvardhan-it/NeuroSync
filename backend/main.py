@@ -8,7 +8,7 @@ from backend.config.settings import settings
 from backend.routes.ai import router as ai_router
 from backend.routes.auth import router as auth_router
 from backend.routes.dataset import router as dataset_router
-from backend.utils.database import create_db_and_tables, engine
+from backend.utils.database import engine
 from backend.utils.exceptions import (
     NeuroSyncException,
     generic_exception_handler,
@@ -20,8 +20,9 @@ from backend.utils.logger import logger
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting NeuroSync...")
-    create_db_and_tables()
-    logger.info("Database initialized successfully.")
+    # Database schema changes are managed exclusively by Alembic before
+    # the web process starts. Do not run metadata.create_all() here: it can
+    # create unversioned tables and conceal missing migration steps.
     yield
     engine.dispose()
     logger.info("NeuroSync shutdown complete.")

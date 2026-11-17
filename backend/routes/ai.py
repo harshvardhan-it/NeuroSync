@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
-from backend.ai.groq_service import ask_ai
+from backend.ai.groq_service import AIProviderError, ask_ai
 from backend.config.settings import settings
 from backend.models.chat_message import ChatMessage
 from backend.models.dataset import Dataset
@@ -26,10 +26,10 @@ def _build_history(session: Session, user_id: int, dataset_id: int) -> list:
         .order_by(ChatMessage.created_at.desc())
         .limit(10)
     ).all()
-    
+
     if not rows:
         return []
-    
+
     # Return as a list of dicts in chronological order (oldest first)
     return [{"role": msg.role, "content": msg.content} for msg in reversed(rows)]
 
@@ -46,18 +46,24 @@ def chat(
         raise HTTPException(status_code=403, detail="Access denied.")
 
     # Pass the whole analysis object. The groq_service will handle truncating large arrays.
-    analysis_context = dataset.analysis_result or {} 
+    analysis_context = dataset.analysis_result or {}
 
     # This is now a list of message dictionaries, not a string
     history = _build_history(session, current_user.id, data.dataset_id)
 
-    response = ask_ai(
-        message=data.message,
-        analysis=analysis_context,
-        conversation_history=history,
-    )
+    try:
+        response = ask_ai(
+            message=data.message,
+            analysis=analysis_context,
+            conversation_history=history,
+        )
+    except AIProviderError:
+        raise HTTPException(
+            status_code=503,
+            detail="AI service is temporarily unavailable. Please try again later.",
+        )
 
-    # Save to DB
+    # Save to DB only after a successful provider response.
     session.add_all([
         ChatMessage(
             user_id=current_user.id,
@@ -134,4 +140,3 @@ def clear_chat_history(
     session.commit()
 
     return {"success": True, "message": "Chat history cleared.", "data": None}
-    

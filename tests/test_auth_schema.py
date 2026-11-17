@@ -23,6 +23,23 @@ def test_register_schema_rejects_short_password():
         )
 
 
+def test_register_schema_rejects_password_over_bcrypt_byte_limit():
+    with pytest.raises(ValidationError, match="72 UTF-8 bytes"):
+        RegisterSchema(
+            name="Harsh",
+            email="harsh@example.com",
+            password="é" * 37,
+        )
+
+
+def test_login_schema_rejects_password_over_bcrypt_byte_limit():
+    with pytest.raises(ValidationError, match="72 UTF-8 bytes"):
+        LoginSchema(
+            email="harsh@example.com",
+            password="é" * 37,
+        )
+
+
 def test_login_schema_validates_email():
     with pytest.raises(ValidationError):
         LoginSchema(email="not-an-email", password="password")
