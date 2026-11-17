@@ -9,6 +9,11 @@ from backend.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
+
+class AIProviderError(RuntimeError):
+    """Raised when the configured AI provider cannot complete a request."""
+
+
 client = None
 if settings.GROQ_API_KEY:
     client = Groq(api_key=settings.GROQ_API_KEY)
@@ -92,10 +97,10 @@ When asked for a full diagnosis/summary, use this structure:
         # Acknowledge the data so the AI knows it has "read" it
         {"role": "assistant", "content": "I have reviewed the executive context and am ready to provide strategic guidance. What is your primary focus or question?"}
     ]
-    
+
     # Append actual conversation history (now properly formatted as separate messages)
     messages.extend(conversation_history)
-    
+
     # Append the current user question
     messages.append({"role": "user", "content": message})
 
@@ -107,8 +112,6 @@ When asked for a full diagnosis/summary, use this structure:
             max_tokens=1500
         )
         return response.choices[0].message.content
-    except Exception as e:
-        logger.error(f"Groq request failed: {str(e)}")
-        # Return the actual error so you can debug. 
-        # (IMPORTANT: Change this to a generic message before going to production!)
-        return f"AI Error: {str(e)}"
+    except Exception as exc:
+        logger.exception("Groq request failed")
+        raise AIProviderError("AI provider request failed.") from exc
