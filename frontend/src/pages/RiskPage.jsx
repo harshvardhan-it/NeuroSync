@@ -21,7 +21,7 @@ export default function RiskPage() {
           <p style={{ color: "var(--text-secondary)" }}>Dataset intelligence</p>
           <h1 className="text-4xl font-display font-bold mt-2">Risk Assessment</h1>
           <p className="mt-3" style={{ color: "var(--text-secondary)" }}>Risk signals calculated from the selected dataset and its forecast results.</p>
-          {dataset?.filename && <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>{dataset.filename}</p>}
+          <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>Dataset #{datasetId}</p>
         </section>
 
         <AnalysisPageState loading={loading} error={error} datasetId={datasetId} dataset={dataset} analysis={analysis}>
