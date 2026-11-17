@@ -17,13 +17,12 @@ async def neurosync_exception_handler(
     request: Request,
     exc: NeuroSyncException
 ):
-
     return JSONResponse(
         status_code=exc.status_code,
         content={
             "success": False,
-            "message": exc.message
-        }
+            "message": exc.message,
+        },
     )
 
 
@@ -31,12 +30,11 @@ async def generic_exception_handler(
     request: Request,
     exc: Exception
 ):
-
+    # Never expose exception details, SQL errors, or provider responses to clients.
     return JSONResponse(
         status_code=500,
         content={
             "success": False,
-            "message": "Internal Server Error",
-            "error": str(exc)
-        }
+            "message": "An unexpected server error occurred.",
+        },
     )
