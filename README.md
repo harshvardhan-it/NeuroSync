@@ -1,5 +1,7 @@
 # NeuroSync
 
+[![NeuroSync CI](https://github.com/harshvardhan-it/NeuroSync/actions/workflows/ci.yml/badge.svg)](https://github.com/harshvardhan-it/NeuroSync/actions/workflows/ci.yml)
+
 ### AI-Powered Executive Decision Intelligence Platform
 
 NeuroSync turns structured business data into decision-ready intelligence. Upload a CSV or Excel dataset, explore its analytical results through an executive dashboard, and ask questions about the selected dataset using a Groq-powered AI workspace.
@@ -40,6 +42,10 @@ The platform is built around a simple workflow:
 - **API health checks** — liveness and readiness endpoints for deployment monitoring.
 
 > The quality and relevance of generated analysis depend on the structure and contents of the uploaded dataset. NeuroSync is a decision-support tool; users should validate important business decisions against their own domain knowledge and source data.
+
+## Implementation Status
+
+The repository includes a working CSV/XLSX ingestion and backend analysis pipeline, dataset-scoped authentication and chat APIs, executive-summary generation, and PDF report generation. The dedicated **Insights, Anomalies, Forecasts, and Risk** frontend pages currently contain sample presentation data; treat those pages as UI previews rather than live, dataset-specific result views. The executive dashboard and analysis workflow are the better representation of the current end-to-end implementation.
 
 ## Live Deployment
 
@@ -331,8 +337,8 @@ Read [SECURITY.md](SECURITY.md) for additional security notes.
 
 **Harshvardhan Dubey**
 
-- GitHub: [@Harshwwe](https://github.com/Harshwwe)
-- LinkedIn: [Harshvardhan Dubey](https://www.linkedin.com/in/harshvardhan-dubey-31051a294/)
+- GitHub: [@harshvardhan-it](https://github.com/harshvardhan-it)
+- LinkedIn: [Harshvardhan Dubey](https://www.linkedin.com/in/harshdubey-it/)
 
 ---
 
