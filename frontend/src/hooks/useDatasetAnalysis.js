@@ -11,28 +11,13 @@ export default function useDatasetAnalysis() {
     analysis: null,
     loading: Boolean(datasetId),
     error: null,
+    loadedDatasetId: null,
   });
 
   useEffect(() => {
+    if (!datasetId) return undefined;
+
     let active = true;
-
-    if (!datasetId) {
-      setState({
-        dataset: null,
-        analysis: null,
-        loading: false,
-        error: null,
-      });
-      return () => {
-        active = false;
-      };
-    }
-
-    setState((current) => ({
-      ...current,
-      loading: true,
-      error: null,
-    }));
 
     getDataset(datasetId)
       .then((response) => {
@@ -43,6 +28,7 @@ export default function useDatasetAnalysis() {
           analysis: dataset?.analysis || null,
           loading: false,
           error: null,
+          loadedDatasetId: datasetId,
         });
       })
       .catch((requestError) => {
@@ -55,6 +41,7 @@ export default function useDatasetAnalysis() {
             requestError.response?.data?.detail ||
             requestError.message ||
             "Unable to load this dataset.",
+          loadedDatasetId: datasetId,
         });
       });
 
@@ -63,5 +50,11 @@ export default function useDatasetAnalysis() {
     };
   }, [datasetId]);
 
-  return { datasetId, ...state };
+  return {
+    datasetId,
+    ...state,
+    loading:
+      state.loading ||
+      Boolean(datasetId && state.loadedDatasetId !== datasetId),
+  };
 }
