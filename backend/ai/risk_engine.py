@@ -243,10 +243,7 @@ class RiskAssessmentEngine:
 
             for forecast in forecast_items:
 
-                if not forecast.get(
-                    "forecast_usable",
-                    True
-                ):
+                if forecast.get("warning") or not forecast.get("forecast_usable", True):
                     continue
 
                 metric = forecast.get(
@@ -259,84 +256,43 @@ class RiskAssessmentEngine:
                     0
                 )
 
-                # Revenue Forecast Risk
+                metric_normalized = str(metric).strip().lower().replace(" ", "_")
+                change = float(change or 0)
 
-                if (
-                    metric == "Revenue"
-                    and change < -10
-                ):
-
+                if ("revenue" in metric_normalized or "sales" in metric_normalized) and change < -10:
                     risk_score += 20
-
                     forecast_risks.append({
-                        "risk_type":
-                        "Forecast Revenue Risk",
+                        "risk_type": "Forecast Revenue Risk",
                         "severity": "High",
                         "score": 20,
-                        "reason":
-                        f"Revenue forecast indicates "
-                        f"{abs(change):.2f}% decline."
+                        "reason": f"Revenue forecast indicates {abs(change):.2f}% decline."
                     })
-
-                # Profit Forecast Risk
-
-                elif (
-                    metric == "Profit"
-                    and change < -15
-                ):
-
+                elif "profit" in metric_normalized and change < -15:
                     risk_score += 25
-
                     forecast_risks.append({
-                        "risk_type":
-                        "Forecast Profit Risk",
+                        "risk_type": "Forecast Profit Risk",
                         "severity": "Critical",
                         "score": 25,
-                        "reason":
-                        f"Profit forecast indicates "
-                        f"{abs(change):.2f}% decline."
+                        "reason": f"Profit forecast indicates {abs(change):.2f}% decline."
+                    })
+                elif ("expense" in metric_normalized or "cost" in metric_normalized) and change > 20:
+                    risk_score += 15
+                    forecast_risks.append({
+                        "risk_type": "Forecast Expense Risk",
+                        "severity": "Medium",
+                        "score": 15,
+                        "reason": f"Expenses forecast indicates {change:.2f}% increase."
+                    })
+                elif "customer" in metric_normalized and change < -10:
+                    risk_score += 10
+                    forecast_risks.append({
+                        "risk_type": "Forecast Customer Risk",
+                        "severity": "Medium",
+                        "score": 10,
+                        "reason": f"Customer count forecast declines by {abs(change):.2f}%."
                     })
 
-        # Expense Forecast Risk
-
-        elif (
-            metric == "Expenses"
-            and change > 20
-        ):
-
-            risk_score += 15
-
-            forecast_risks.append({
-                "risk_type":
-                "Forecast Expense Risk",
-                "severity": "Medium",
-                "score": 15,
-                "reason":
-                f"Expenses forecast indicates "
-                f"{change:.2f}% increase."
-            })
-
-        # Customer Forecast Risk
-
-        elif (
-            metric == "Customer_Count"
-            and change < -10
-        ):
-
-            risk_score += 10
-
-            forecast_risks.append({
-                "risk_type":
-                "Forecast Customer Risk",
-                "severity": "Medium",
-                "score": 10,
-                "reason":
-                f"Customer count forecast "
-                f"declines by "
-                f"{abs(change):.2f}%."
-            })
-
-
+        risk_score = min(risk_score, 100)
 
         # ==========================================
         # RISK LEVEL

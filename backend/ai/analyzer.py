@@ -422,6 +422,53 @@ def analyze_dataframe(df):
         }
 
     # ==========================================================
+    # SCENARIO SIMULATION
+    # ==========================================================
+
+    try:
+
+        scenario_simulations = (
+            ScenarioSimulationService.compare(
+                df,
+                [
+                    {
+                        "scenario_type":
+                        "revenue_growth",
+
+                        "percentage_change":
+                        15
+                    },
+                    {
+                        "scenario_type":
+                        "expense_reduction",
+
+                        "percentage_change":
+                        10
+                    },
+                    {
+                        "scenario_type":
+                        "customer_decline",
+
+                        "percentage_change":
+                        20
+                    }
+                ]
+            )
+        )
+
+    except Exception as e:
+
+        logger.exception(
+            "Scenario simulation failed: %s",
+            str(e)
+        )
+
+        scenario_simulations = {
+            "status": "failed",
+            "results": []
+        }
+
+    # ==========================================================
     # STRATEGIC LEVERAGE INTELLIGENCE
     # ==========================================================
 
@@ -498,53 +545,6 @@ def analyze_dataframe(df):
             "executive_explanation":
                 "Executive optimization unavailable.",
             "confidence_score": 0
-        }
-
-    # ==========================================================
-    # SCENARIO SIMULATION
-    # ==========================================================
-
-    try:
-
-        scenario_simulations = (
-            ScenarioSimulationService.compare(
-                df,
-                [
-                    {
-                        "scenario_type":
-                        "revenue_growth",
-
-                        "percentage_change":
-                        15
-                    },
-                    {
-                        "scenario_type":
-                        "expense_reduction",
-
-                        "percentage_change":
-                        10
-                    },
-                    {
-                        "scenario_type":
-                        "customer_decline",
-
-                        "percentage_change":
-                        20
-                    }
-                ]
-            )
-        )
-
-    except Exception as e:
-
-        logger.exception(
-            "Scenario simulation failed: %s",
-            str(e)
-        )
-
-        scenario_simulations = {
-            "status": "failed",
-            "results": []
         }
 
     # ==========================================================

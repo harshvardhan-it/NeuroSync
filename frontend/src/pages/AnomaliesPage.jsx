@@ -1,100 +1,42 @@
 import DashboardLayout from "../components/layout/DashboardLayout";
-
+import AnalysisPageState from "../components/analytics/AnalysisPageState";
 import AnomalyCard from "../components/anomalies/AnomalyCard";
 import AnomalySummary from "../components/anomalies/AnomalySummary";
+import useDatasetAnalysis from "../hooks/useDatasetAnalysis";
 
 export default function AnomaliesPage() {
-  const anomalies = [
-    {
-      metric: "Revenue",
-      type: "Revenue Drop",
-      severity: "Critical",
-      currentValue: "82,000",
-      expectedValue: "120,000",
-      message:
-        "Revenue dropped more than 30% compared to previous period.",
-    },
-    {
-      metric: "Profit",
-      type: "Profit Drop",
-      severity: "Critical",
-      currentValue: "9,000",
-      expectedValue: "18,000",
-      message:
-        "Profit dropped more than 40% compared to previous period.",
-    },
-    {
-      metric: "Expenses",
-      type: "Cost Surge",
-      severity: "Warning",
-      currentValue: "65,000",
-      expectedValue: "42,000",
-      message:
-        "Operating expenses increased significantly.",
-    },
-  ];
+  const { datasetId, dataset, analysis, loading, error } = useDatasetAnalysis();
+  const anomalies = Array.isArray(analysis?.anomalies) ? analysis.anomalies : [];
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
-
         <section>
-          <p
-            style={{
-              color:
-                "var(--text-secondary)",
-            }}
-          >
-            Anomaly Engine
-          </p>
-
-          <h1
-            className="
-              text-4xl
-              font-display
-              font-bold
-              mt-2
-            "
-          >
-            Business Anomalies
-          </h1>
+          <p style={{ color: "var(--text-secondary)" }}>Dataset intelligence</p>
+          <h1 className="text-4xl font-display font-bold mt-2">Business Anomalies</h1>
+          <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>Dataset #{datasetId}</p>
         </section>
 
-        <AnomalySummary />
-
-        <div className="grid gap-6">
-
-          {anomalies.map(
-            (
-              anomaly,
-              index
-            ) => (
-              <AnomalyCard
-                key={index}
-                metric={
-                  anomaly.metric
-                }
-                type={
-                  anomaly.type
-                }
-                severity={
-                  anomaly.severity
-                }
-                currentValue={
-                  anomaly.currentValue
-                }
-                expectedValue={
-                  anomaly.expectedValue
-                }
-                message={
-                  anomaly.message
-                }
-              />
-            )
+        <AnalysisPageState loading={loading} error={error} datasetId={datasetId} dataset={dataset} analysis={analysis}>
+          <AnomalySummary anomalies={anomalies} />
+          {anomalies.length ? (
+            <div className="grid gap-6">
+              {anomalies.map((anomaly, index) => (
+                <AnomalyCard
+                  key={`${anomaly.metric || "metric"}-${anomaly.type || "anomaly"}-${index}`}
+                  metric={anomaly.metric || "Unknown metric"}
+                  type={anomaly.type || "Anomaly"}
+                  severity={anomaly.severity || "Unknown"}
+                  currentValue={anomaly.current_value ?? "—"}
+                  expectedValue={anomaly.expected_value ?? "—"}
+                  message={anomaly.message || "No additional explanation was provided."}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="glass-card p-6" style={{ color: "var(--text-secondary)" }}>No anomalies were detected in this dataset.</p>
           )}
-
-        </div>
-
+        </AnalysisPageState>
       </div>
     </DashboardLayout>
   );

@@ -7,7 +7,7 @@ class AnomalyEngine:
     NeuroSync Anomaly Engine V1
 
     Features:
-    - Z-Score anomaly detection
+    - Robust Z-Score anomaly detection
     - Revenue Drop detection
     - Profit Drop detection
     - Cost Surge detection
@@ -72,46 +72,50 @@ class AnomalyEngine:
         if len(series) < 3:
             return anomalies
 
-        mean = series.mean()
-        std = series.std()
+        median = float(series.median())
+        mad = float((series - median).abs().median())
 
-        if std == 0 or np.isnan(std):
-            return anomalies
+        if mad > 0:
+            robust_z_scores = 0.6745 * (series - median) / mad
+        else:
+            # MAD can be zero for business metrics with repeated values.
+            # Use the IQR as a fallback scale, then a small relative floor
+            # for highly repeated/constant data.
+            q1 = float(series.quantile(0.25))
+            q3 = float(series.quantile(0.75))
+            iqr = q3 - q1
+            fallback_scale = (
+                iqr / 1.349
+                if iqr > 0
+                else max(abs(median) * 0.05, float(series.abs().median()) * 0.05, 1e-9) / 3
+            )
+            robust_z_scores = (series - median) / fallback_scale
 
-        z_scores = (series - mean) / std
-
-        for index, z_score in z_scores.items():
-
-            abs_z = abs(z_score)
-
-            severity = None
+        for index, z_score in robust_z_scores.items():
+            abs_z = abs(float(z_score))
 
             if abs_z > self.critical_z_threshold:
                 severity = "Critical"
-
             elif abs_z > self.warning_z_threshold:
                 severity = "Warning"
+            else:
+                continue
 
-            if severity:
+            anomaly_type = "Spike" if series.loc[index] > median else "Drop"
 
-                anomaly_type = (
-                    "Spike"
-                    if series.loc[index] > mean
-                    else "Drop"
+            anomalies.append({
+                "metric": column,
+                "type": anomaly_type,
+                "severity": severity,
+                "current_value": float(series.loc[index]),
+                "expected_value": round(median, 2),
+                "z_score": round(float(z_score), 2),
+                "detection_method": "robust_z_score",
+                "message": (
+                    f"{column} shows unusual "
+                    f"{anomaly_type.lower()} behavior."
                 )
-
-                anomalies.append({
-                    "metric": column,
-                    "type": anomaly_type,
-                    "severity": severity,
-                    "current_value": float(series.loc[index]),
-                    "expected_value": round(float(mean), 2),
-                    "z_score": round(float(z_score), 2),
-                    "message": (
-                        f"{column} shows unusual "
-                        f"{anomaly_type.lower()} behavior."
-                    )
-                })
+            })
 
         return anomalies
 
