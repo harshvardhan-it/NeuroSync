@@ -259,7 +259,7 @@ class RiskAssessmentEngine:
                 metric_normalized = str(metric).strip().lower().replace(" ", "_")
                 change = float(change or 0)
 
-                if metric_normalized in {"revenue", "sales"} and change < -10:
+                if ("revenue" in metric_normalized or "sales" in metric_normalized) and change < -10:
                     risk_score += 20
                     forecast_risks.append({
                         "risk_type": "Forecast Revenue Risk",
@@ -267,7 +267,7 @@ class RiskAssessmentEngine:
                         "score": 20,
                         "reason": f"Revenue forecast indicates {abs(change):.2f}% decline."
                     })
-                elif metric_normalized == "profit" and change < -15:
+                elif "profit" in metric_normalized and change < -15:
                     risk_score += 25
                     forecast_risks.append({
                         "risk_type": "Forecast Profit Risk",
@@ -275,7 +275,7 @@ class RiskAssessmentEngine:
                         "score": 25,
                         "reason": f"Profit forecast indicates {abs(change):.2f}% decline."
                     })
-                elif metric_normalized in {"expense", "expenses", "cost", "costs"} and change > 20:
+                elif ("expense" in metric_normalized or "cost" in metric_normalized) and change > 20:
                     risk_score += 15
                     forecast_risks.append({
                         "risk_type": "Forecast Expense Risk",
@@ -283,7 +283,7 @@ class RiskAssessmentEngine:
                         "score": 15,
                         "reason": f"Expenses forecast indicates {change:.2f}% increase."
                     })
-                elif metric_normalized in {"customer", "customers", "customer_count", "customers_count"} and change < -10:
+                elif "customer" in metric_normalized and change < -10:
                     risk_score += 10
                     forecast_risks.append({
                         "risk_type": "Forecast Customer Risk",
