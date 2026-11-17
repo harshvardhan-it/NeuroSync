@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 from openpyxl import Workbook
 
 from backend.routes import dataset as dataset_routes
@@ -69,3 +69,44 @@ def test_upload_accepts_csv_and_xlsx(
     stored_files = list(tmp_path.iterdir())
     assert len(stored_files) == 1
     assert stored_files[0].name != filename
+
+
+@pytest.mark.parametrize(
+    ("contents", "max_columns", "max_rows", "max_cells"),
+    [
+        (b"A,B\\n1,2\\n", 1, 10, 100),
+        (b"A\\n1\\n2\\n", 200, 1, 100),
+        (b"A,B\\n1,2\\n3,4\\n", 200, 10, 2),
+    ],
+)
+def test_upload_rejects_datasets_over_configured_limits(
+    tmp_path,
+    monkeypatch,
+    contents,
+    max_columns,
+    max_rows,
+    max_cells,
+):
+    monkeypatch.setattr(dataset_routes, "UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr(dataset_routes.settings, "MAX_DATASET_COLUMNS", max_columns)
+    monkeypatch.setattr(dataset_routes.settings, "MAX_DATASET_ROWS", max_rows)
+    monkeypatch.setattr(dataset_routes.settings, "MAX_DATASET_CELLS", max_cells)
+    monkeypatch.setattr(
+        dataset_routes,
+        "analyze_dataframe",
+        lambda dataframe: pytest.fail("Oversized dataset must not be analyzed"),
+    )
+
+    session = Mock()
+    upload = UploadFile(filename="oversized.csv", file=BytesIO(contents))
+
+    with pytest.raises(HTTPException) as error:
+        dataset_routes.upload_dataset(
+            file=upload,
+            current_user=SimpleNamespace(id=7),
+            session=session,
+        )
+
+    assert error.value.status_code == 413
+    session.add.assert_not_called()
+    assert list(tmp_path.iterdir()) == []
