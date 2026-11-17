@@ -19,6 +19,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r backend/requirements.txt
 
+      - name: Verify migrations on clean SQLite
+        env:
+          SECRET_KEY: ci-only-secret-key
+          DATABASE_URL: sqlite:///./migration-ci.db
+          ALLOWED_ORIGINS: http://localhost:5173
+        run: python -m scripts.migrate
+
       - name: Compile Python
         run: python -m compileall backend tests
 
