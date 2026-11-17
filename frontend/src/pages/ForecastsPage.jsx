@@ -21,7 +21,7 @@ export default function ForecastsPage() {
         <section>
           <p style={{ color: "var(--text-secondary)" }}>Dataset intelligence</p>
           <h1 className="text-4xl font-display font-bold mt-2">Business Forecasts</h1>
-          {dataset?.filename && <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>{dataset.filename}</p>}
+          <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>Dataset #{datasetId}</p>
         </section>
 
         <AnalysisPageState loading={loading} error={error} datasetId={datasetId} dataset={dataset} analysis={analysis}>
