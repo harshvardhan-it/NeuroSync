@@ -74,9 +74,9 @@ def test_upload_accepts_csv_and_xlsx(
 @pytest.mark.parametrize(
     ("contents", "max_columns", "max_rows", "max_cells"),
     [
-        (b"A,B\\n1,2\\n", 1, 10, 100),
-        (b"A\\n1\\n2\\n", 200, 1, 100),
-        (b"A,B\\n1,2\\n3,4\\n", 200, 10, 2),
+        (b"A,B\n1,2\n", 1, 10, 100),
+        (b"A\n1\n2\n", 200, 1, 100),
+        (b"A,B\n1,2\n3,4\n", 200, 10, 2),
     ],
 )
 def test_upload_rejects_datasets_over_configured_limits(
